@@ -1,0 +1,2639 @@
+<title>Recovery Risk Ledger</title>
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --surface-2: #f0ebe0;
+    --border: #ded4c0;
+    --text: #241f18;
+    --text-secondary: #5c5342;
+    --text-muted: #8a7d68;
+    --accent: #7d611f;
+    --accent-ink: #ffffff;
+    --danger: #a23f2f;
+    --danger-ink: #ffffff;
+    --safe: #4f6b46;
+    --ramp-1: #f3e2b8;
+    --ramp-2: #e0bc66;
+    --ramp-3: #c9963f;
+    --ramp-4: #a23f2f;
+    --shadow: 0 1px 2px rgba(36,31,24,0.06), 0 8px 24px -12px rgba(36,31,24,0.18);
+    --series-recovery: #845f10;
+    --series-flat: #1284a0;
+    --series-baseline: #8a7d68;
+    --good: #4f6b46;
+    --good-soft: #eaf0e6;
+    --danger-soft: #f7e6e2;
+    --warn: #a8710f;
+    --font-display: "Newsreader", Georgia, serif;
+    --font-body: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161310;
+      --surface: #221d18;
+      --surface-2: #2b241d;
+      --border: #3a3226;
+      --text: #f2ece0;
+      --text-secondary: #b8ab93;
+      --text-muted: #8a7d68;
+      --accent: #e0bc66;
+      --accent-ink: #241a06;
+      --danger: #e0654f;
+      --danger-ink: #2a0e08;
+      --safe: #8ba97e;
+      --ramp-1: #4a3a1c;
+      --ramp-2: #8a6a2c;
+      --ramp-3: #c9963f;
+      --ramp-4: #e0654f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    --series-recovery: #b58c28;
+    --series-flat: #2b9db6;
+    --series-baseline: #8a7d68;
+    --good: #8ba97e;
+    --good-soft: #232c20;
+    --danger-soft: #33201b;
+    --warn: #d8a441;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161310;
+    --surface: #221d18;
+    --surface-2: #2b241d;
+    --border: #3a3226;
+    --text: #f2ece0;
+    --text-secondary: #b8ab93;
+    --text-muted: #8a7d68;
+    --accent: #e0bc66;
+    --accent-ink: #241a06;
+    --danger: #e0654f;
+    --danger-ink: #2a0e08;
+    --safe: #8ba97e;
+    --ramp-1: #4a3a1c;
+    --ramp-2: #8a6a2c;
+    --ramp-3: #c9963f;
+    --ramp-4: #e0654f;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    --series-recovery: #b58c28;
+    --series-flat: #2b9db6;
+    --series-baseline: #8a7d68;
+    --good: #8ba97e;
+    --good-soft: #232c20;
+    --danger-soft: #33201b;
+    --warn: #d8a441;
+  }
+  :root[dir="rtl"] {
+    --font-display: "Vazirmatn", Tahoma, sans-serif;
+    --font-body: "Vazirmatn", Tahoma, sans-serif;
+  }
+
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+  .num, input[type="text"], input[type="number"], select, table td.num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .num { direction: ltr; unicode-bidi: isolate; }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  header.page {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  header.page .title { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  header.page .subtitle { color: var(--text-secondary); font-size: 13.5px; max-width: 46ch; margin-top: 4px; }
+  .eyebrow {
+    font-family: var(--font-body); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em; color: var(--accent);
+    display: block; margin-bottom: 6px;
+  }
+  :root[dir="rtl"] .eyebrow { text-transform: none; letter-spacing: 0; }
+
+  .lang-toggle {
+    display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .lang-toggle button {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600; padding: 7px 14px;
+    border: none; background: var(--surface); color: var(--text-secondary); cursor: pointer;
+  }
+  .lang-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .lang-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+  .layout > * { min-width: 0; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .rail { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 20px; }
+  @media (max-width: 900px) { .rail { position: static; } }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px; box-shadow: var(--shadow);
+  }
+  .panel h2 { font-size: 14px; margin-bottom: 14px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  :root[dir="rtl"] .field label { text-transform: none; letter-spacing: 0; }
+  .field .hint { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; color: var(--text); font-size: 13.5px;
+  }
+  select { font-family: var(--font-body); }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent;
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .tier-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .tier-btn {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    padding: 8px 4px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-secondary); cursor: pointer;
+    text-align: center;
+  }
+  .tier-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tier-btn[aria-pressed="true"] {
+    background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+  }
+  .tier-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  main { display: flex; flex-direction: column; gap: 22px; }
+  .mode-section { display: flex; flex-direction: column; gap: 22px; }
+
+  .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 720px) { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  .stat .label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); margin-bottom: 8px;
+  }
+  :root[dir="rtl"] .stat .label { text-transform: none; letter-spacing: 0; }
+  .stat .value {
+    font-family: var(--font-display); font-size: 27px; font-weight: 600;
+    font-variant-numeric: tabular-nums; line-height: 1.05; direction: ltr; unicode-bidi: isolate;
+  }
+  .stat.danger .value { color: var(--danger); }
+  .stat .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+  .chart-panel { padding: 20px 20px 12px; }
+  .chart-panel h2 { font-size: 14px; margin-bottom: 2px; }
+  .chart-panel .chart-caption { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  #chart { width: 100%; height: 220px; display: block; overflow: visible; direction: ltr; }
+  .bar-tip {
+    position: absolute; pointer-events: none; background: var(--text); color: var(--bg);
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; padding: 6px 9px;
+    border-radius: 6px; white-space: nowrap; transform: translate(-50%, -100%);
+    opacity: 0; transition: opacity 0.08s ease; z-index: 5; font-variant-numeric: tabular-nums;
+    direction: ltr;
+  }
+  .chart-wrap { position: relative; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { padding: 8px 10px; text-align: end; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: start; }
+  th {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-muted); position: sticky; top: 0; background: var(--surface);
+  }
+  :root[dir="rtl"] th { text-transform: none; letter-spacing: 0; }
+  td.num { color: var(--text); }
+  td.loss { color: var(--danger); }
+  td.profit { color: var(--safe); }
+  tr.exhausted td { background: color-mix(in oklab, var(--danger) 10%, transparent); }
+  .table-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .table-scroll table { min-width: 640px; }
+
+  .tier-compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 720px) { .tier-compare-grid { grid-template-columns: 1fr; } }
+  .tier-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: var(--surface-2);
+  }
+  .tier-card .tier-name { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+  .tier-card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; font-size: 12.5px; }
+  .tier-card dt { color: var(--text-muted); }
+  .tier-card dd { margin: 0; text-align: end; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+  .tier-card dd.loss { color: var(--danger); }
+
+  footer.note {
+    margin-top: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.7;
+    border-top: 1px solid var(--border); padding-top: 16px;
+  }
+
+  /* ---- mode switcher ---- */
+  .mode-switch {
+    display: flex; gap: 4px; padding: 4px; margin-bottom: 26px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px;
+  }
+  .mode-switch button {
+    flex: 1; font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    padding: 9px 10px; border: none; border-radius: 6px; cursor: pointer;
+    background: transparent; color: var(--text-secondary); text-align: center;
+  }
+  .mode-switch button .mode-sub {
+    display: block; font-weight: 400; font-size: 11px; color: var(--text-muted); margin-top: 2px;
+  }
+  .mode-switch button:hover { color: var(--text); }
+  .mode-switch button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+  .mode-switch button[aria-pressed="true"] .mode-sub { color: var(--text-secondary); }
+  .mode-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (max-width: 620px) { .mode-switch { flex-direction: column; } }
+
+  /* ---- shared chart furniture ---- */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+  .legend .swatch { width: 14px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  .legend .swatch.dashed {
+    height: 0; border-top: 2px dashed var(--series-baseline); border-radius: 0;
+  }
+  .legend .swatch.band { height: 10px; border-radius: 3px; }
+  .chart-lg { width: 100%; height: 300px; display: block; overflow: visible; direction: ltr; }
+  .chart-md { width: 100%; height: 240px; display: block; overflow: visible; direction: ltr; }
+
+  /* ---- verdict card ---- */
+  .verdict {
+    display: flex; align-items: flex-start; gap: 14px;
+    border: 1px solid var(--border); border-inline-start: 4px solid var(--text-muted);
+    border-radius: 10px; padding: 18px; background: var(--surface);
+  }
+  .verdict.is-good { border-inline-start-color: var(--good); background: var(--good-soft); }
+  .verdict.is-bad { border-inline-start-color: var(--danger); background: var(--danger-soft); }
+  .verdict .icon { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
+  .verdict .vtitle { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin-bottom: 4px; }
+  .verdict .vbody { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+  /* ---- assumptions callout ---- */
+  .assumptions {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 16px 18px;
+    background: var(--surface-2);
+  }
+  .assumptions h3 {
+    font-family: var(--font-body); font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-muted); margin: 0 0 10px;
+  }
+  :root[dir="rtl"] .assumptions h3 { text-transform: none; letter-spacing: 0; }
+  .assumptions ul { margin: 0; padding-inline-start: 18px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.75; }
+  .assumptions li { margin-bottom: 5px; }
+  .assumptions li:last-child { margin-bottom: 0; }
+
+  /* ---- upload ---- */
+  .drop {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 34px 24px;
+    text-align: center; background: var(--surface-2); cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .drop:hover, .drop.is-over { border-color: var(--accent); background: var(--surface); }
+  .drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .drop .drop-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .drop .drop-body { font-size: 13px; color: var(--text-secondary); max-width: 52ch; margin: 0 auto 4px; line-height: 1.65; }
+  .drop .drop-formats { font-size: 11.5px; color: var(--text-muted); margin-top: 10px; }
+  .btn {
+    font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 9px 16px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+  .privacy-note {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;
+    color: var(--text-muted); margin-top: 14px;
+  }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 12px; color: var(--text-secondary);
+  }
+  .file-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+  .parse-error {
+    border: 1px solid var(--danger); border-radius: 10px; padding: 14px 16px;
+    background: var(--danger-soft); font-size: 13px; color: var(--text); line-height: 1.65;
+  }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .link-btn {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600; background: none;
+    border: none; color: var(--accent); cursor: pointer; padding: 2px 0; text-decoration: underline;
+  }
+  .link-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mini-table th, .mini-table td { padding: 6px 10px; font-size: 12px; }
+  .range-row { display: flex; align-items: center; gap: 10px; }
+  .range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .range-row .range-val {
+    font-family: "IBM Plex Mono", monospace; font-size: 13px; min-width: 52px; text-align: end;
+    font-variant-numeric: tabular-nums; direction: ltr;
+  }
+  .stat.good .value { color: var(--good); }
+  /* ---- replay mode ---------------------------------------------------- */
+  /* The stage keeps its own dark palette in both themes on purpose: it is a
+     recording surface, and a clip must look the same whoever played it back. */
+  .replay-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .source-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .source-row button {
+    font-family: var(--font-body); font-size: 12.5px; font-weight: 600; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-secondary);
+  }
+  .source-row button:hover { border-color: var(--accent); }
+  .source-row button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .source-row button:disabled { opacity: 0.42; cursor: not-allowed; }
+  .source-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .replay-inputs {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  .mini-row { display: flex; gap: 6px; }
+  .mini-row button {
+    flex: 1 1 auto; font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+    padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+  }
+  .mini-row button:hover { border-color: var(--accent); }
+  .mini-row button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .mini-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mini-row button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .mini-row button:disabled:hover { border-color: var(--border); }
+  .replay-inputs.locked [data-lock] { opacity: 0.45; }
+  .replay-inputs.locked [data-lock] input { cursor: not-allowed; }
+  .run-row { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 560px; }
+  .run-row button {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600; cursor: pointer;
+    padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); text-align: start;
+    background: var(--surface-2); color: var(--text); white-space: nowrap; line-height: 1.35;
+  }
+  .run-row button .rv {
+    display: block; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    font-weight: 400; color: var(--text-muted); direction: ltr;
+  }
+  .run-row button[aria-pressed="true"] .rv { color: var(--text-secondary); }
+  .run-row button:hover { border-color: var(--accent); }
+  .run-row button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: var(--surface); }
+  .run-row button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .transport { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--text-secondary); }
+  .transport input[type="range"] { accent-color: var(--accent); width: 96px; }
+  .scrub { width: min(100%, 420px); accent-color: var(--accent); cursor: pointer; }
+  .scrub:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .transport label { display: flex; align-items: center; gap: 6px; }
+
+  .stage {
+    container-type: inline-size; position: relative; overflow: hidden;
+    aspect-ratio: 9 / 16; width: min(100%, 420px); height: auto; flex: 0 0 auto;
+    background: #17130f; color: #f4eee2; border-radius: 14px; border: 1px solid #33291f;
+    display: flex; flex-direction: column;
+    --s-ink: #100e0b; --s-line: #33291f; --s-cream: #f4eee2; --s-muted: #9d8f77;
+    --s-brass: #c9992f; --s-loss: #d4553f; --s-win: #7fb069;
+  }
+  .stage.bare { border-radius: 0; border-color: transparent; width: min(100%, 620px); }
+  .stage .s-head { padding: 6cqw 6cqw 0; flex-shrink: 0; }
+  .stage .s-eyebrow {
+    font-size: 2.7cqw; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--s-brass); margin-bottom: 1.6cqw;
+  }
+  :root[dir="rtl"] .stage .s-eyebrow, :root[dir="rtl"] .stage .s-label { letter-spacing: 0; text-transform: none; }
+  .stage .s-headline {
+    font-family: var(--font-display); font-size: 7.2cqw; font-weight: 600;
+    line-height: 1.12; text-wrap: balance; margin: 0; color: var(--s-cream);
+  }
+  .stage .s-sub { font-size: 3cqw; color: var(--s-muted); margin-top: 1.8cqw; font-family: "IBM Plex Mono", monospace; direction: ltr; }
+  .stage .s-chart { position: relative; flex: 1 1 auto; margin-top: 3cqw; min-height: 0; }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .stage .s-ladder { padding: 0 6cqw; flex-shrink: 0; }
+  .stage .s-label {
+    font-size: 2.5cqw; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--s-muted); margin-bottom: 2cqw;
+  }
+  .stage .s-steps { display: flex; align-items: stretch; gap: 1.6cqw; height: 18cqw; direction: ltr; }
+  .stage .s-step {
+    position: relative; flex: 1 1 0; display: flex; flex-direction: column;
+    justify-content: flex-end; align-items: center; gap: 1cqw;
+  }
+  .stage .s-bar-area { flex: 1 1 auto; width: 100%; display: flex; align-items: flex-end; }
+  .stage .s-tag {
+    position: absolute; top: -2.6cqw; left: 50%; transform: translateX(-50%);
+    font-family: "IBM Plex Mono", monospace; font-size: 2.1cqw; letter-spacing: 0.08em;
+    color: var(--s-loss); white-space: nowrap;
+  }
+  .stage .s-fill {
+    width: 100%; border-radius: 1.2cqw 1.2cqw 0 0; background: #4a3c2c;
+    transition: background 220ms ease, opacity 220ms ease; opacity: 0.75;
+  }
+  .stage .s-step.on .s-fill { opacity: 1; }
+  .stage .s-step.loss .s-fill { background: var(--s-loss); }
+  .stage .s-step.win .s-fill { background: var(--s-win); }
+  .stage .s-lot {
+    font-family: "IBM Plex Mono", monospace; font-size: 2.4cqw; color: var(--s-muted);
+    opacity: 0.4; transition: opacity 220ms ease, color 220ms ease; direction: ltr;
+  }
+  .stage .s-step.on .s-lot { opacity: 1; color: var(--s-cream); }
+  .stage .s-pl { padding: 4cqw 6cqw 6cqw; flex-shrink: 0; }
+  .stage .s-pl-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
+  .stage .s-pl-value {
+    font-family: var(--font-display); font-size: 11.5cqw; font-weight: 600; line-height: 0.95;
+    font-variant-numeric: tabular-nums; color: var(--s-loss); direction: ltr;
+  }
+  .stage .s-pl-value.pos { color: var(--s-win); }
+  .stage .s-side { text-align: end; }
+  .stage .s-side .n { font-family: "IBM Plex Mono", monospace; font-size: 4.2cqw; color: var(--s-cream); direction: ltr; }
+  .stage .s-flash {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at 50% 46%, currentColor 0%, transparent 62%);
+  }
+  .stage .s-end {
+    position: absolute; inset: 0; background: var(--s-ink);
+    display: flex; flex-direction: column; justify-content: center; gap: 3cqw;
+    padding: 9cqw; opacity: 0; pointer-events: none; transition: opacity 420ms ease;
+  }
+  .stage .s-end.show { opacity: 1; }
+  .stage .s-verdict {
+    font-family: var(--font-display); font-size: 9cqw; font-weight: 600; line-height: 1.1;
+    text-wrap: balance; margin: 0; color: var(--s-cream);
+  }
+  .stage .s-big {
+    font-family: var(--font-display); font-size: 16cqw; font-weight: 600; line-height: 1;
+    font-variant-numeric: tabular-nums; direction: ltr; white-space: nowrap;
+  }
+  /* A four-figure loss is far wider than "+$5.00" and would break its own minus
+     sign onto a separate line, so long values step down a size. */
+  .stage .s-big.long { font-size: 12cqw; }
+  .stage .s-big.xlong { font-size: 9.5cqw; }
+  .stage .s-big.pos { color: var(--s-win); }
+  .stage .s-big.neg { color: var(--s-loss); }
+  .stage .s-move {
+    font-family: var(--font-display); font-size: 4.6cqw; font-weight: 500; line-height: 1.3;
+    color: var(--s-cream); text-wrap: balance;
+  }
+  .stage .s-move:empty { display: none; }
+  .stage .s-foot { font-family: "IBM Plex Mono", monospace; font-size: 2.9cqw; color: var(--s-muted); line-height: 1.7; direction: ltr; }
+  .stage .s-rule { height: 1px; background: var(--s-line); }
+  @media (prefers-reduced-motion: reduce) {
+    .stage .s-fill, .stage .s-lot, .stage .s-end { transition: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Vazirmatn:wght@400;500;600;700&display=swap">
+
+<div class="shell">
+
+  <header class="page">
+    <div>
+      <span class="eyebrow" data-i18n="eyebrow">SOS Bot &middot; Risk Setup</span>
+      <div class="title" data-i18n="title">Recovery Risk Ledger</div>
+      <div class="subtitle" data-i18n="subtitle">What one full recovery ladder costs, and what it would have done to your own trading history.</div>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button data-lang="fa" aria-pressed="true">فارسی</button>
+      <button data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <div class="mode-switch" role="group" aria-label="View">
+    <button data-mode="ledger" aria-pressed="true">
+      <span data-i18n="modeLedger">Risk ledger</span>
+      <span class="mode-sub" data-i18n="modeLedgerSub">What one full ladder costs</span>
+    </button>
+</button>
+    <button data-mode="account" aria-pressed="false">
+      <span data-i18n="modeAccount">Your account</span>
+      <span class="mode-sub" data-i18n="modeAccountSub">Your own trading history</span>
+    </button>
+    <button data-mode="replay" aria-pressed="false">
+      <span data-i18n="modeReplay">Replay</span>
+      <span class="mode-sub" data-i18n="modeReplaySub">Watch a ladder play out</span>
+    </button>
+  </div>
+
+  <div class="layout">
+    <div class="rail">
+      <div class="panel">
+        <h2 data-i18n="hAccount">Account</h2>
+        <div class="field">
+          <label for="accountSize" data-i18n="lblAccountSize">Account size ($)</label>
+          <input type="number" id="accountSize" value="10000" min="1" step="100">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="hTier">Risk tier</h2>
+        <div class="tier-row" role="group" aria-label="Risk tier">
+          <button class="tier-btn" data-tier="low" aria-pressed="false" data-i18n="tierLow">Low</button>
+          <button class="tier-btn" data-tier="mid" aria-pressed="false" data-i18n="tierMid">Mid</button>
+          <button class="tier-btn" data-tier="high" aria-pressed="false" data-i18n="tierHigh">High</button>
+          <button class="tier-btn" data-tier="custom" aria-pressed="true" data-i18n="tierCustom">Custom</button>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label for="targetPct" data-i18n="lblTargetPct">Target loss at full recovery (% of account)</label>
+          <input type="number" id="targetPct" value="5" min="1" step="1" inputmode="numeric">
+          <div class="hint" data-i18n="hintTargetPct">Presets set the round-1 SL so the array's total loss lands exactly here.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="hPerTrade">Per-trade</h2>
+        <div class="field">
+          <label for="unitSelect" data-i18n="lblUnit">Unit</label>
+          <select id="unitSelect">
+            <option value="dollar" data-i18n="unitDollar">Dollar</option>
+            <option value="pips" data-i18n="unitPips">Pips</option>
+            <option value="percent" data-i18n="unitPercent">Percentage of balance</option>
+          </select>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="tpValue" data-i18n="lblTP">TP, round 1</label>
+            <input type="number" id="tpValue" value="10" min="0" step="0.5">
+          </div>
+          <div class="field">
+            <label for="slValue" data-i18n="lblSL">SL, round 1</label>
+            <input type="number" id="slValue" value="5" min="0.01" step="0.5">
+          </div>
+        </div>
+        <div class="field">
+          <label for="ratioNote" data-i18n="lblRatio">Ratio</label>
+          <div id="ratioNote" class="num" style="font-size:13.5px; padding-top:4px;">2.00 : 1</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="hArray">Recovery array</h2>
+        <div class="field">
+          <label for="arrayInput" data-i18n="lblArray">Multiplier per round (comma-separated)</label>
+          <input type="text" id="arrayInput" value="1,1,2,3,4,6,9,14,21,31,47,70">
+          <div class="hint" data-i18n="hintArray">Edited automatically by tier presets. Type your own to test a custom shape — switches to Custom.</div>
+        </div>
+      </div>
+    </div>
+
+    <main>
+     <section id="mode-ledger" class="mode-section">
+      <div class="hero-grid">
+        <div class="stat danger">
+          <div class="label" data-i18n="statLoss">Total loss</div>
+          <div class="value num" id="statLossDollar">$0</div>
+        </div>
+        <div class="stat danger">
+          <div class="label" data-i18n="statLossPct">As % of account</div>
+          <div class="value num" id="statLossPct">0%</div>
+        </div>
+        <div class="stat">
+          <div class="label" data-i18n="statMovement">Price movement survived</div>
+          <div class="value num" id="statMovement">$0</div>
+        </div>
+        <div class="stat">
+          <div class="label" data-i18n="statRounds">Losses attempted</div>
+          <div class="value num" id="statRounds">0</div>
+        </div>
+      </div>
+
+      <div class="panel chart-panel">
+        <h2 data-i18n="hChart">Cumulative loss, round by round</h2>
+        <div class="chart-caption" data-i18n="chartCaption">Bars darken as exposure grows. The last bar is the total if every round loses in a row.</div>
+        <div class="chart-wrap">
+          <svg id="chart" role="img" aria-label="Cumulative loss by round"></svg>
+          <div class="bar-tip" id="barTip"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 4px;">
+        <div style="padding: 16px 16px 4px;">
+          <h2 data-i18n="hTable">Round by round</h2>
+        </div>
+        <div class="table-scroll">
+          <table id="roundTable">
+            <thead>
+              <tr>
+                <th data-i18n="colRound">Round</th>
+                <th data-i18n="colMult">Multiplier</th>
+                <th data-i18n="colTP">TP&nbsp;($)</th>
+                <th data-i18n="colSL">SL&nbsp;($)</th>
+                <th data-i18n="colCum">Cumulative loss</th>
+                <th data-i18n="colNet">Net if this round wins</th>
+              </tr>
+            </thead>
+            <tbody id="roundTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-bottom: 12px;" data-i18n="hCompare">Low / Mid / High, side by side</h2>
+        <div class="tier-compare-grid" id="tierCompare"></div>
+      </div>
+
+      <footer class="note" data-i18n="footerNote">
+        Total loss = SL (round 1, in dollars) &times; sum of the array up to the round cap. Price movement
+        survived assumes XAUUSD quoted to 2 digits at the bot's 0.01 base lot, where $1 of stop-loss equals
+        $1 of gold price movement — the same relationship the live EA relies on. A pip is treated the same
+        way: 1 pip = $1 at that base lot, matching the bot's own broker-independent pip normalization. This
+        calculator mirrors ApplyLiteRiskSetup() exactly; it does not call the broker or place trades.
+      </footer>
+     </section>
+
+     </section>
+
+     <section id="mode-account" class="mode-section" hidden>
+      <div id="acctIntro">
+        <div class="drop" id="dropZone" tabindex="0" role="button" aria-describedby="dropBody">
+          <div class="drop-title" data-i18n="dropTitle">Drop your account history here</div>
+          <div class="drop-body" id="dropBody" data-i18n="dropBody">In MetaTrader: open the Toolbox, go to the History tab, right-click and choose Report. Save the file, then drop it here to see what a recovery ladder would have done to your real losing streaks.</div>
+          <div class="btn-row">
+            <button class="btn primary" id="chooseBtn" data-i18n="btnChoose">Choose file</button>
+            <button class="btn" id="sampleBtn" data-i18n="btnSample">Use a demo account instead</button>
+          </div>
+          <div class="drop-formats" data-i18n="dropFormats">MetaTrader 4 and 5 reports (.html, .htm), spreadsheets (.xlsx) or CSV</div>
+          <div class="privacy-note" data-i18n="privacyNote">Your file is read inside this browser tab and is never uploaded anywhere.</div>
+        </div>
+        <input type="file" id="fileInput" accept=".htm,.html,.csv,.tsv,.txt,.xlsx,.xls" hidden>
+      </div>
+
+      <div id="acctError" class="parse-error" hidden></div>
+
+      <div id="acctResults" class="mode-section" hidden>
+        <div class="section-head">
+          <span class="file-chip"><span class="dot"></span><span id="fileChipName">&nbsp;</span></span>
+          <button class="link-btn" id="resetBtn" data-i18n="btnAnother">Use a different file</button>
+        </div>
+
+        <div class="verdict" id="acctVerdict">
+          <span class="icon" id="acctVerdictIcon" aria-hidden="true">&middot;</span>
+          <div>
+            <div class="vtitle" id="acctVerdictTitle">&nbsp;</div>
+            <div class="vbody" id="acctVerdictBody">&nbsp;</div>
+          </div>
+        </div>
+
+        <div class="hero-grid">
+          <div class="stat">
+            <div class="label" data-i18n="statTrades">Closed trades read</div>
+            <div class="value num" id="statTrades">&mdash;</div>
+            <div class="sub" id="statTradesSub">&nbsp;</div>
+          </div>
+          <div class="stat">
+            <div class="label" data-i18n="statWinRate">Your win rate</div>
+            <div class="value num" id="statWinRateOut">&mdash;</div>
+            <div class="sub" id="statWinRateSub">&nbsp;</div>
+          </div>
+          <div class="stat">
+            <div class="label" data-i18n="statStreak">Longest losing streak</div>
+            <div class="value num" id="statStreak">&mdash;</div>
+            <div class="sub" data-i18n="statStreakSub">Consecutive losses, taken from your file</div>
+          </div>
+          <div class="stat">
+            <div class="label" data-i18n="statDepth">Deepest ladder step reached</div>
+            <div class="value num" id="statDepth">&mdash;</div>
+            <div class="sub" id="statDepthSub">&nbsp;</div>
+          </div>
+        </div>
+
+        <div class="panel chart-panel">
+          <h2 data-i18n="hStreak">Your losing streaks against the ladder</h2>
+          <div class="chart-caption" data-i18n="streakCaption">Each bar is how often a losing run of that length appears in your history. The line marks where this ladder runs out of steps.</div>
+          <div class="legend">
+            <span class="legend-item"><span class="swatch band" style="background: var(--series-recovery);"></span><span data-i18n="legStreaks">Losing runs in your history</span></span>
+            <span class="legend-item"><span class="swatch" style="background: var(--danger);"></span><span data-i18n="legCap">Ladder cap</span></span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="streakChart" class="chart-md" role="img" aria-label="Losing streak distribution"></svg>
+            <div class="bar-tip" id="streakTip"></div>
+          </div>
+        </div>
+
+        <div class="panel chart-panel">
+          <h2 data-i18n="hCounter">The same trades, sized three ways</h2>
+          <div class="chart-caption" data-i18n="counterCaption">Your real run of wins and losses, kept in its original order, re-sized three different ways.</div>
+          <div class="legend">
+            <span class="legend-item"><span class="swatch dashed"></span><span data-i18n="legActual">What actually happened</span></span>
+            <span class="legend-item"><span class="swatch" style="background: var(--series-recovery);"></span><span data-i18n="legRecovery">With the recovery ladder</span></span>
+            <span class="legend-item"><span class="swatch" style="background: var(--series-flat);"></span><span data-i18n="legFlat">Fixed size, no recovery</span></span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="equityChart" class="chart-lg" role="img" aria-label="Equity comparison"></svg>
+            <div class="bar-tip" id="equityTip"></div>
+          </div>
+          <div class="table-scroll" style="margin-top: 16px;">
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colVariant">Sizing</th>
+                  <th data-i18n="colEnd">Ending balance</th>
+                  <th data-i18n="colChange">Change</th>
+                  <th data-i18n="colMaxDD">Worst drawdown</th>
+                  <th data-i18n="colBreaches">Cap hits</th>
+                </tr>
+              </thead>
+              <tbody id="equityTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="assumptions">
+          <h3 data-i18n="hAcctAssume">How your file was used</h3>
+          <ul>
+            <li data-i18n="acctAssume1">Only the order of your wins and losses is taken from the file. The amounts are re-sized to the TP, SL and ladder in the rail, so all three lines are compared like for like.</li>
+            <li data-i18n="acctAssume2">Your own position sizing, your own TP and SL, and any manual intervention are deliberately discarded. This is not a replay of your account.</li>
+            <li data-i18n="acctAssume3">The bot would never have taken your trades. It has its own entry logic, so a real run would produce a different sequence with a similar shape.</li>
+            <li data-i18n="acctAssume4">Deposits, withdrawals and other balance operations are skipped. Commission and swap are folded into each trade where the file reports them.</li>
+          </ul>
+        </div>
+      </div>
+     </section>
+
+     <section id="mode-replay" class="mode-section" hidden>
+      <div class="panel">
+        <h2 data-i18n="hSource">What to replay</h2>
+        <div class="source-row" id="sourceRow" role="group">
+          <button data-src="settings" aria-pressed="true" data-i18n="srcSettings">Your settings</button>
+          <button data-src="history" aria-pressed="false" data-i18n="srcHistory">Your uploaded history</button>
+          <button data-src="fills" aria-pressed="false" data-i18n="srcFills">Real SOS fills</button>
+        </div>
+        <div class="hint" id="sourceNote" style="margin-top: 12px; text-align: center;">&nbsp;</div>
+
+        <div class="replay-inputs" id="replayInputs">
+          <div class="field" data-lock="1">
+            <label for="startPrice" data-i18n="lblStartPrice">Start price (XAUUSD)</label>
+            <input type="number" id="startPrice" value="4400" min="0" step="0.5">
+          </div>
+          <div class="field" data-lock="1">
+            <label data-i18n="lblDirection">Direction</label>
+            <div class="mini-row" id="dirRow" role="group">
+              <button data-dir="buy" aria-pressed="true" data-i18n="dirBuy">Buy</button>
+              <button data-dir="sell" aria-pressed="false" data-i18n="dirSell">Sell</button>
+            </div>
+          </div>
+          <div class="field">
+            <label data-i18n="lblChart">Chart</label>
+            <div class="mini-row" id="chartRow" role="group">
+              <button data-chart="price" aria-pressed="true" data-i18n="chartPrice">Price</button>
+              <button data-chart="result" aria-pressed="false" data-i18n="chartResult">Running result</button>
+            </div>
+          </div>
+        </div>
+        <div class="hint" id="inputsNote" style="margin-top: 10px;"></div>
+      </div>
+
+      <div class="replay-wrap">
+        <div class="run-row" id="runRow" role="group" aria-label="Run"></div>
+
+        <div class="stage" id="stage">
+          <div class="s-head">
+            <div class="s-eyebrow" id="sEyebrow">SOS Bot &middot; recovery ladder</div>
+            <h3 class="s-headline" id="sHeadline">&nbsp;</h3>
+            <div class="s-sub" id="sSub">&nbsp;</div>
+          </div>
+          <div class="s-chart"><canvas id="sCanvas"></canvas></div>
+          <div class="s-ladder">
+            <div class="s-label" id="sLadderLabel" data-i18n="ladderLots">Position size, trade by trade</div>
+            <div class="s-steps" id="sSteps"></div>
+          </div>
+          <div class="s-pl">
+            <div class="s-pl-row">
+              <div>
+                <div class="s-label" data-i18n="runningResult">Running result</div>
+                <div class="s-pl-value" id="sPl">$0.00</div>
+              </div>
+              <div class="s-side">
+                <div class="n" id="sCount">0 / 0</div>
+                <div class="s-label" style="margin: 0;" data-i18n="tradesLabel">Trades</div>
+              </div>
+            </div>
+          </div>
+          <div class="s-flash" id="sFlash"></div>
+          <div class="s-end" id="sEnd">
+            <div>
+              <div class="s-eyebrow" id="sEcEyebrow">&nbsp;</div>
+              <p class="s-verdict" id="sEcVerdict">&nbsp;</p>
+            </div>
+            <div class="s-big" id="sEcBig">&nbsp;</div>
+            <div class="s-move" id="sEcMove"></div>
+            <div class="s-rule"></div>
+            <div class="s-foot" id="sEcFoot">&nbsp;</div>
+          </div>
+        </div>
+
+        <input type="range" id="sScrub" class="scrub" min="0" max="1000" value="0" step="1" data-i18n-aria="lblScrub" aria-label="Position in the run">
+
+        <div class="transport">
+          <button class="btn primary" id="sPlay" data-i18n="btnReplay">Replay</button>
+          <label><span data-i18n="lblSpeed">Speed</span>
+            <input type="range" id="sSpeed" min="0.5" max="2" step="0.1" value="1">
+            <span class="num" id="sSpeedVal">1.0&times;</span>
+          </label>
+          <label><input type="checkbox" id="sLoop" checked> <span data-i18n="lblLoop">Loop</span></label>
+          <button class="btn" id="sBare" data-i18n="btnHideFrame">Recording size</button>
+        </div>
+
+        <div class="hint" style="text-align: center; max-width: 52ch;" data-i18n="recHint">Recording on a Mac: Cmd+Shift+5, choose Record Selected Portion, and drag around the panel. It is already 9:16, the shape Instagram wants.</div>
+      </div>
+
+      <div class="assumptions">
+        <h3 data-i18n="hReplayAssume">What you are watching</h3>
+        <ul>
+          <li data-i18n="replayAssume1">Your settings and Your uploaded history are simulations. Sizes come from the recovery array in the rail, and each result comes from the TP and SL beside it, so editing the array changes the replay immediately.</li>
+          <li data-i18n="replayAssume2">Your uploaded history keeps the real order of your wins and losses and re-sizes it. It does not replay your actual position sizes.</li>
+          <li data-i18n="replayAssume3">Real SOS fills is the only source showing genuine broker records: real entries, exits, stops, targets and lot sizes from 4 September 2026. Nothing there is modelled.</li>
+          <li data-i18n="replayAssume4">For simulated sources the price path is drawn from your start price and stop distance, stepping one stop per loss. It is the geometry your settings imply, not real price action — only Real SOS fills shows prices a broker actually printed.</li>
+        </ul>
+      </div>
+     </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STRINGS = {
+    fa: {
+      eyebrow: "ربات SOS · تنظیم ریسک",
+      title: "دفتر محاسبه ریسک بازیابی",
+      subtitle: "هزینهٔ یک نردبان بازیابی کامل، و اینکه با تاریخچهٔ معاملات خودتان چه می‌کرد.",
+      hAccount: "حساب",
+      lblAccountSize: "حجم حساب ($)",
+      hTier: "سطح ریسک",
+      tierLow: "کم", tierMid: "متوسط", tierHigh: "زیاد", tierCustom: "سفارشی",
+      lblTargetPct: "ضرر هدف در بازیابی کامل (٪ از حساب)",
+      hintTargetPct: "پیش‌فرض‌ها مقدار SL دور اول را طوری تنظیم می‌کنند که مجموع ضرر آرایه دقیقاً به همین عدد برسد.",
+      hPerTrade: "هر معامله",
+      lblUnit: "واحد",
+      unitDollar: "دلار", unitPips: "پیپ", unitPercent: "درصد از حساب",
+      lblTP: "TP، دور اول",
+      lblSL: "SL، دور اول",
+      lblRatio: "نسبت",
+      hArray: "آرایه بازیابی",
+      lblArray: "ضریب هر دور (با کاما جدا شود)",
+      hintArray: "با انتخاب سطح ریسک به‌طور خودکار تنظیم می‌شود. برای الگوی دلخواه، عدد خودتان را وارد کنید — به‌طور خودکار به «سفارشی» تغییر می‌کند.",
+      statLoss: "مجموع ضرر",
+      statLossPct: "٪ از حساب",
+      statMovement: "حرکت قیمتی قابل تحمل",
+      statRounds: "تعداد باخت پیاپی",
+      hChart: "ضرر تجمعی، دور به دور",
+      chartCaption: "با افزایش ریسک، رنگ ستون‌ها تیره‌تر می‌شود. آخرین ستون مجموع ضرر در صورت باخت پیاپی همهٔ دورهاست.",
+      hTable: "جدول دور به دور",
+      colRound: "دور", colMult: "ضریب", colTP: "TP ($)", colSL: "SL ($)",
+      colCum: "ضرر تجمعی", colNet: "سود خالص در صورت برد این دور",
+      hCompare: "مقایسه کم / متوسط / زیاد",
+      cardTarget: "هدف", cardLoss: "مجموع ضرر", cardMovement: "حرکت قابل تحمل", cardRounds: "باخت پیاپی",
+      ofAccount: "٪ از حساب",
+      chartTip: "دور {n} · تجمعی {v}",
+      footerNote: "مجموع ضرر = SL دور اول (بر حسب دلار) × مجموع آرایه تا سقف دور. حرکت قیمتی قابل‌تحمل بر این فرض " +
+        "است که XAUUSD با دو رقم اعشار نمایش داده می‌شود و حجم پایه ربات 0.01 است — جایی که هر ۱ دلار SL برابر با " +
+        "۱ دلار حرکت قیمت طلاست، همان رابطه‌ای که ربات زنده روی آن تکیه می‌کند. پیپ نیز به همین شکل محاسبه می‌شود: " +
+        "هر پیپ برابر ۱ دلار در این حجم پایه، مطابق با نرمال‌سازی مستقل از بروکر خود ربات. این ابزار دقیقاً معادل " +
+        "تابع ApplyLiteRiskSetup() عمل می‌کند؛ به بروکر متصل نمی‌شود و معامله‌ای انجام نمی‌دهد.",
+      modeReplay: "بازپخش",
+      modeReplaySub: "تماشای اجرای نردبان",
+      hSource: "چه چیزی بازپخش شود",
+      srcSettings: "تنظیمات شما",
+      srcHistory: "تاریخچهٔ بارگذاری‌شدهٔ شما",
+      srcFills: "نمونه: معاملات واقعی",
+      srcNoteSettings: "از آرایهٔ بازیابی، TP و SL در ستون کناری ساخته می‌شود. هر کدام را تغییر دهید، بازپخش هم با شما تغییر می‌کند.",
+      srcNoteHistory: "ترتیب واقعی بردها و باخت‌های شما، بازمقیاس‌شده با نردبان ستون کناری.",
+      srcNoteFills: "سوابق واقعی بروکر از ۱۳ شهریور ۱۴۰۵ — ورود، خروج، حد ضرر و حجم واقعی.",
+      srcHistoryEmpty: "اول در «حساب شما» یک گزارش بارگذاری کنید تا این گزینه فعال شود.",
+      stageEyebrowSim: "ربات SOS · نردبان شبیه‌سازی‌شده",
+      stageEyebrowReal: "ربات SOS · معاملات ثبت‌شده",
+      inputsLocked: "اجرای ثبت‌شده قیمت، جهت و حجم خودش را دارد؛ پس این دو ورودی اینجا اثری ندارند.",
+      ladderLots: "حجم معامله، دور به دور",
+      ladderMult: "ضریب هر دور",
+      runningResult: "نتیجهٔ جاری",
+      tradesLabel: "معامله",
+      btnReplay: "بازپخش",
+      lblSpeed: "سرعت",
+      lblLoop: "تکرار",
+      lblScrub: "موقعیت در اجرا",
+      lblStartPrice: "قیمت شروع (XAUUSD)",
+      lblDirection: "جهت",
+      dirBuy: "خرید",
+      dirSell: "فروش",
+      lblChart: "نمودار",
+      chartPrice: "قیمت",
+      chartResult: "نتیجهٔ جاری",
+      btnHideFrame: "اندازهٔ ضبط",
+      btnShowFrame: "اندازهٔ عادی",
+      recHint: "اول «اندازهٔ ضبط» را بزنید، بعد در مک Cmd+Shift+5، سپس Record Selected Portion را انتخاب کنید و دور همین پنل بکشید. این قاب ۹:۱۶ است، همان نسبتی که اینستاگرام می‌خواهد.",
+      runLosses: "{n} باخت",
+      runLossesOne: "یک باخت",
+      runRecoversAt: "بازیابی در پلهٔ {d}",
+      runDeep: "{cum} گودی · پایان {net}",
+      runPastCap: "عبور از سقف نردبان",
+      hlRecovered: "{n} باخت، جبران‌شده با یک معامله.",
+      hlRecoveredOne: "یک باخت، جبران‌شده با معاملهٔ بعدی.",
+      hlPastCap: "{n} باخت. نردبان پله کم آورد.",
+      fillsUnit: "{n} معامله",
+      simUnit: "{n} دور · شبیه‌سازی از تنظیمات شما",
+      resetTag: "ریست",
+      ecResult: "نتیجه",
+      ecCapCosts: "هزینهٔ رسیدن به سقف",
+      ecVerdictGood: "معاملهٔ بازیابی تمام فاصله را جبران کرد.",
+      ecVerdictBad: "در سقف، ربات به ضریب ۱ برمی‌گردد و ضرر را می‌پذیرد.",
+      ecMoveGood: "پس از {move} حرکت قیمت در خلاف جهت، حساب جبران شد.",
+      ecMoveBad: "قیمت {move} در خلاف جهت رفت و نردبان به سقف خورد.",
+      ecFootFills: "{n} معامله · بیشترین حجم {peak} لات",
+      ecFootSim: "{n} دور · بیشترین ضریب {peak}",
+      ecFootLine2: "{cum} ضرر · {win} روی معاملهٔ برنده",
+      ecFootReal: "معاملات واقعی بروکر، ۱۳ شهریور ۱۴۰۵",
+      ecFootSimNote: "شبیه‌سازی از ستون کناری، نه معاملهٔ واقعی",
+      hReplayAssume: "چه چیزی می‌بینید",
+      replayAssume1: "«تنظیمات شما» و «تاریخچهٔ بارگذاری‌شدهٔ شما» شبیه‌سازی هستند. حجم‌ها از آرایهٔ بازیابی ستون کناری و نتیجهٔ هر دور از TP و SL کنار آن می‌آید؛ پس تغییر آرایه بلافاصله بازپخش را عوض می‌کند.",
+      replayAssume2: "«تاریخچهٔ بارگذاری‌شده» ترتیب واقعی بردها و باخت‌های شما را نگه می‌دارد و بازمقیاس می‌کند. حجم واقعی معاملات شما را بازپخش نمی‌کند.",
+      replayAssume3: "«معاملات واقعی SOS» تنها منبعی است که سوابق واقعی بروکر را نشان می‌دهد: ورود، خروج، حد ضرر، حد سود و حجم واقعی از ۱۳ شهریور ۱۴۰۵. هیچ‌چیز در آن مدل‌سازی نشده است.",
+      replayAssume4: "برای منابع شبیه‌سازی‌شده، مسیر قیمت از قیمت شروع و فاصلهٔ حد ضرر شما ساخته می‌شود و با هر باخت یک حد ضرر جابه‌جا می‌شود. این هندسه‌ای است که تنظیمات شما ایجاب می‌کند، نه حرکت واقعی بازار — فقط «معاملات واقعی SOS» قیمت‌هایی را نشان می‌دهد که بروکر واقعاً ثبت کرده است.",
+      modeLedger: "دفتر ریسک",
+      modeLedgerSub: "هزینهٔ یک نردبان کامل",
+      modeAccount: "حساب شما",
+      modeAccountSub: "تاریخچهٔ معاملات خودتان",
+      dropTitle: "تاریخچهٔ حسابتان را اینجا رها کنید",
+      dropBody: "در متاتریدر: پنجرهٔ Toolbox را باز کنید، به زبانهٔ History بروید، راست‌کلیک کنید و Report را بزنید. فایل را ذخیره کنید و اینجا رها کنید تا ببینید نردبان بازیابی با رشته‌باخت‌های واقعی شما چه می‌کرد.",
+      btnChoose: "انتخاب فایل",
+      btnSample: "به جایش یک حساب نمونه ببین",
+      dropFormats: "گزارش متاتریدر ۴ و ۵ (.html، .htm)، فایل اکسل (.xlsx) یا CSV",
+      privacyNote: "فایل شما داخل همین تب مرورگر خوانده می‌شود و هیچ‌جا آپلود نمی‌شود.",
+      btnAnother: "فایل دیگری انتخاب کن",
+      statTrades: "معاملات بستهٔ خوانده‌شده",
+      statWinRate: "نرخ برد شما",
+      statStreak: "بلندترین رشتهٔ باخت",
+      statStreakSub: "باخت پیاپی، برگرفته از فایل شما",
+      statDepth: "عمیق‌ترین پلهٔ نردبان",
+      hStreak: "رشته‌باخت‌های شما در برابر نردبان",
+      streakCaption: "هر ستون نشان می‌دهد رشته‌باختی به آن طول چند بار در تاریخچهٔ شما رخ داده است. خط نقطه‌چین جایی است که این نردبان پله کم می‌آورد.",
+      legStreaks: "رشته‌باخت‌ها در تاریخچهٔ شما",
+      legCap: "سقف نردبان",
+      hCounter: "همان معاملات، با سه حجم‌دهی متفاوت",
+      counterCaption: "همان توالی واقعی بردها و باخت‌های شما، با حفظ ترتیب اصلی، به سه شکل حجم‌دهی شده است.",
+      legActual: "آنچه واقعاً رخ داد",
+      legRecovery: "با نردبان بازیابی",
+      legFlat: "حجم ثابت، بدون بازیابی",
+      colVariant: "حجم‌دهی",
+      colEnd: "موجودی پایانی",
+      colChange: "تغییر",
+      colMaxDD: "بدترین افت سرمایه",
+      colBreaches: "برخورد با سقف",
+      hAcctAssume: "فایل شما چگونه استفاده شد",
+      acctAssume1: "فقط ترتیب برد و باخت‌های شما از فایل برداشته می‌شود. مبالغ بر پایهٔ TP و SL و نردبانِ ستون کناری بازمقیاس می‌شوند تا هر سه خط با یک معیار سنجیده شوند.",
+      acctAssume2: "حجم‌دهی خودتان، TP و SL خودتان و هر دخالت دستی که کرده‌اید عمداً کنار گذاشته می‌شود. این بازپخش حساب شما نیست.",
+      acctAssume3: "ربات هرگز معاملات شما را نمی‌گرفت. منطق ورود خودش را دارد، پس اجرای واقعی توالی متفاوتی با شکلی مشابه می‌ساخت.",
+      acctAssume4: "واریز، برداشت و دیگر عملیات موجودی نادیده گرفته می‌شوند. کمیسیون و سواپ، هر جا فایل گزارششان کند، در نتیجهٔ همان معامله لحاظ می‌شوند.",
+      tradesUnit: "معامله",
+      errRead: "خواندن این فایل ممکن نشد. دوباره تلاش کنید یا فایل دیگری انتخاب کنید.",
+      errParse: "این فایل قابل خواندن نبود. یک گزارش متاتریدر (.html)، فایل اکسل (.xlsx) یا CSV لازم است.",
+      errXlsx: "کتابخانهٔ خواندن اکسل بارگذاری نشد. فایل را در متاتریدر به شکل HTML ذخیره کنید و دوباره امتحان کنید.",
+      errNoTrades: "هیچ معاملهٔ بسته‌ای در این فایل پیدا نشد. مطمئن شوید گزارش بخش Positions یا Deals را دارد.",
+      errTooFew: "فقط {n} معامله پیدا شد. برای اینکه رشته‌باخت‌ها معنا داشته باشند دست‌کم ۲۰ معامله لازم است.",
+      sampleName: "حساب نمونه (ساختگی، معاملهٔ واقعی نیست)",
+      winsLosses: "{w} برد، {l} باخت",
+      avgRatio: "میانگین برد به میانگین باخت، {r} به ۱",
+      depthBreached: "تاریخچهٔ شما از سقف نردبان رد می‌شود",
+      depthHeadroom: "{n} پله فاصله تا سقف",
+      aBadTitle: "تاریخچهٔ شما این نردبان را می‌شکند",
+      aBadBody: "بلندترین رشتهٔ باخت شما {streak} معامله بود و این نردبان {cap} پله دارد. در آن نقطه ربات ضریب را به ۱ برمی‌گرداند و ضرر انباشته را می‌پذیرد — با تنظیمات فعلی حدود {cost}.",
+      aGoodTitle: "تاریخچهٔ شما درون ظرفیت این نردبان می‌ماند",
+      aGoodBody: "بلندترین رشتهٔ باخت شما {streak} معامله بود و این نردبان {cap} پله دارد، یعنی {head} پله فاصله. این فاصله تضمین نیست: رشته‌ای بلندتر از آنچه تا امروز دیده‌اید همچنان ممکن است.",
+      streakTip: "{k} باخت پیاپی · {v} بار",
+      streakBeyond: "فراتر از سقف نردبان",
+      streakAxis: "طول رشتهٔ باخت",
+      capLabel: "سقف نردبان: {n}",
+      equityTip: "معاملهٔ {n}",
+    },
+    en: {
+      eyebrow: "SOS Bot &middot; Risk Setup",
+      title: "Recovery Risk Ledger",
+      subtitle: "What one full recovery ladder costs, and what it would have done to your own trading history.",
+      hAccount: "Account",
+      lblAccountSize: "Account size ($)",
+      hTier: "Risk tier",
+      tierLow: "Low", tierMid: "Mid", tierHigh: "High", tierCustom: "Custom",
+      lblTargetPct: "Target loss at full recovery (% of account)",
+      hintTargetPct: "Presets set the round-1 SL so the array's total loss lands exactly here.",
+      hPerTrade: "Per-trade",
+      lblUnit: "Unit",
+      unitDollar: "Dollar", unitPips: "Pips", unitPercent: "Percentage of balance",
+      lblTP: "TP, round 1",
+      lblSL: "SL, round 1",
+      lblRatio: "Ratio",
+      hArray: "Recovery array",
+      lblArray: "Multiplier per round (comma-separated)",
+      hintArray: "Edited automatically by tier presets. Type your own to test a custom shape — switches to Custom.",
+      statLoss: "Total loss",
+      statLossPct: "As % of account",
+      statMovement: "Price movement survived",
+      statRounds: "Losses attempted",
+      hChart: "Cumulative loss, round by round",
+      chartCaption: "Bars darken as exposure grows. The last bar is the total if every round loses in a row.",
+      hTable: "Round by round",
+      colRound: "Round", colMult: "Multiplier", colTP: "TP&nbsp;($)", colSL: "SL&nbsp;($)",
+      colCum: "Cumulative loss", colNet: "Net if this round wins",
+      hCompare: "Low / Mid / High, side by side",
+      cardTarget: "Target", cardLoss: "Total loss", cardMovement: "Movement survived", cardRounds: "Losses attempted",
+      ofAccount: "% of account",
+      chartTip: "Round {n} · cumulative {v}",
+      footerNote: "Total loss = SL (round 1, in dollars) &times; sum of the array up to the round cap. Price movement " +
+        "survived assumes XAUUSD quoted to 2 digits at the bot's 0.01 base lot, where $1 of stop-loss equals $1 of " +
+        "gold price movement — the same relationship the live EA relies on. A pip converts the same way: 1 pip = $1 " +
+        "at that base lot, matching the bot's own broker-independent pip normalization. This calculator mirrors " +
+        "ApplyLiteRiskSetup() exactly; it does not call the broker or place trades.",
+      modeReplay: "Replay",
+      modeReplaySub: "Watch a ladder play out",
+      hSource: "What to replay",
+      srcSettings: "Your settings",
+      srcHistory: "Your uploaded history",
+      srcFills: "Example: real trades",
+      srcNoteSettings: "Built from the recovery array, TP and SL in the rail. Edit any of them and the replay changes with you.",
+      srcNoteHistory: "Your real order of wins and losses, re-sized to the ladder in the rail.",
+      srcNoteFills: "Genuine broker records from 4 September 2026 — real entries, exits, stops and lot sizes.",
+      srcHistoryEmpty: "Load a report in Your account first, then this source turns on.",
+      stageEyebrowSim: "SOS Bot · simulated ladder",
+      stageEyebrowReal: "SOS Bot · recorded trades",
+      inputsLocked: "A recorded run carries its own prices, direction and lot sizes, so those two inputs do not apply here.",
+      ladderLots: "Position size, trade by trade",
+      ladderMult: "Multiplier per round",
+      runningResult: "Running result",
+      tradesLabel: "Trades",
+      btnReplay: "Replay",
+      lblSpeed: "Speed",
+      lblLoop: "Loop",
+      lblScrub: "Position in the run",
+      lblStartPrice: "Start price (XAUUSD)",
+      lblDirection: "Direction",
+      dirBuy: "Buy",
+      dirSell: "Sell",
+      lblChart: "Chart",
+      chartPrice: "Price",
+      chartResult: "Running result",
+      btnHideFrame: "Recording size",
+      btnShowFrame: "Normal size",
+      recHint: "Press Recording size first, then Cmd+Shift+5 on a Mac, choose Record Selected Portion and drag around the panel. It is already 9:16, the shape Instagram wants.",
+      runLosses: "{n} losses",
+      runLossesOne: "One loss",
+      runRecoversAt: "Recovers on step {d}",
+      runDeep: "{cum} deep · ends {net}",
+      runPastCap: "Runs past the cap",
+      hlRecovered: "{n} losses, recovered by one trade.",
+      hlRecoveredOne: "One loss, recovered by the next trade.",
+      hlPastCap: "{n} losses. The ladder ran out of steps.",
+      fillsUnit: "{n} fills",
+      simUnit: "{n} rounds · simulated from your settings",
+      resetTag: "RESET",
+      ecResult: "Result",
+      ecCapCosts: "What the cap costs",
+      ecVerdictGood: "The recovery trade closed the whole gap.",
+      ecVerdictBad: "At the cap the bot resets to 1× and keeps the loss.",
+      ecMoveGood: "Recovered after the price moved {move} against the position.",
+      ecMoveBad: "The price moved {move} against the position before the cap.",
+      ecFootFills: "{n} fills · peak size {peak} lots",
+      ecFootSim: "{n} rounds · peak multiplier {peak}",
+      ecFootLine2: "{cum} in losses · {win} on the winner",
+      ecFootReal: "Real broker fills, 4 Sep 2026",
+      ecFootSimNote: "Simulated from the rail, not a real trade",
+      hReplayAssume: "What you are watching",
+      replayAssume1: "Your settings and Your uploaded history are simulations. Sizes come from the recovery array in the rail, and each result comes from the TP and SL beside it, so editing the array changes the replay immediately.",
+      replayAssume2: "Your uploaded history keeps the real order of your wins and losses and re-sizes it. It does not replay your actual position sizes.",
+      replayAssume3: "Real SOS fills is the only source showing genuine broker records: real entries, exits, stops, targets and lot sizes from 4 September 2026. Nothing there is modelled.",
+      replayAssume4: "For simulated sources the price path is drawn from your start price and stop distance, stepping one stop per loss. It is the geometry your settings imply, not real price action — only Real SOS fills shows prices a broker actually printed.",
+      modeLedger: "Risk ledger",
+      modeLedgerSub: "What one full ladder costs",
+      modeAccount: "Your account",
+      modeAccountSub: "Your own trading history",
+      dropTitle: "Drop your account history here",
+      dropBody: "In MetaTrader: open the Toolbox, go to the History tab, right-click and choose Report. Save the file, then drop it here to see what a recovery ladder would have done to your real losing streaks.",
+      btnChoose: "Choose file",
+      btnSample: "Use a demo account instead",
+      dropFormats: "MetaTrader 4 and 5 reports (.html, .htm), spreadsheets (.xlsx) or CSV",
+      privacyNote: "Your file is read inside this browser tab and is never uploaded anywhere.",
+      btnAnother: "Use a different file",
+      statTrades: "Closed trades read",
+      statWinRate: "Your win rate",
+      statStreak: "Longest losing streak",
+      statStreakSub: "Consecutive losses, taken from your file",
+      statDepth: "Deepest ladder step reached",
+      hStreak: "Your losing streaks against the ladder",
+      streakCaption: "Each bar is how often a losing run of that length appears in your history. The line marks where this ladder runs out of steps.",
+      legStreaks: "Losing runs in your history",
+      legCap: "Ladder cap",
+      hCounter: "The same trades, sized three ways",
+      counterCaption: "Your real run of wins and losses, kept in its original order, re-sized three different ways.",
+      legActual: "What actually happened",
+      legRecovery: "With the recovery ladder",
+      legFlat: "Fixed size, no recovery",
+      colVariant: "Sizing",
+      colEnd: "Ending balance",
+      colChange: "Change",
+      colMaxDD: "Worst drawdown",
+      colBreaches: "Cap hits",
+      hAcctAssume: "How your file was used",
+      acctAssume1: "Only the order of your wins and losses is taken from the file. The amounts are re-sized to the TP, SL and ladder in the rail, so all three lines are compared like for like.",
+      acctAssume2: "Your own position sizing, your own TP and SL, and any manual intervention are deliberately discarded. This is not a replay of your account.",
+      acctAssume3: "The bot would never have taken your trades. It has its own entry logic, so a real run would produce a different sequence with a similar shape.",
+      acctAssume4: "Deposits, withdrawals and other balance operations are skipped. Commission and swap are folded into each trade where the file reports them.",
+      tradesUnit: "trades",
+      errRead: "That file could not be read. Try again, or choose a different file.",
+      errParse: "That file could not be understood. It needs to be a MetaTrader report (.html), a spreadsheet (.xlsx) or a CSV.",
+      errXlsx: "The spreadsheet reader could not load. Save the report as HTML in MetaTrader and try again.",
+      errNoTrades: "No closed trades were found in that file. Check that the report includes its Positions or Deals section.",
+      errTooFew: "Only {n} trades were found. Losing streaks need at least 20 trades before they mean anything.",
+      sampleName: "Demo account (generated, not real trading)",
+      winsLosses: "{w} wins, {l} losses",
+      avgRatio: "Average win to average loss, {r} to 1",
+      depthBreached: "Your history runs past the cap",
+      depthHeadroom: "{n} steps of headroom left",
+      aBadTitle: "Your history breaks this ladder",
+      aBadBody: "Your longest losing streak was {streak} trades and this ladder has {cap} steps. At that point the bot resets the multiplier to 1x and keeps the accumulated loss — about {cost} at the current settings.",
+      aGoodTitle: "Your history stays inside this ladder",
+      aGoodBody: "Your longest losing streak was {streak} trades against a {cap}-step ladder, leaving {head} steps of headroom. That headroom is not a guarantee: a longer streak than any you have seen so far is still available to you.",
+      streakTip: "{k} losses in a row · {v} times",
+      streakBeyond: "past the ladder cap",
+      streakAxis: "Length of losing run",
+      capLabel: "Ladder cap: {n}",
+      equityTip: "Trade {n}",
+    }
+  };
+
+  var TIERS = {
+    low:  { array: [1,1,2,3,5], pct: 2 },
+    mid:  { array: [1,1,2,3,5,8,13,21], pct: 5 },
+    high: { array: [1,1,2,3,5,8,13,21,34,55,89,144,233], pct: 10 }
+  };
+  var PIP_DOLLAR = 1.0; // XAUUSD, 2-digit-normalized, 0.01 base lot: 1 pip = $1 (see footer note)
+
+  var currentLang = 'fa';
+  var currentUnit = 'dollar';
+  var activeTier = 'mid';
+
+  var els = {
+    accountSize: document.getElementById('accountSize'),
+    targetPct: document.getElementById('targetPct'),
+    unitSelect: document.getElementById('unitSelect'),
+    tpValue: document.getElementById('tpValue'),
+    slValue: document.getElementById('slValue'),
+    arrayInput: document.getElementById('arrayInput'),
+    ratioNote: document.getElementById('ratioNote'),
+    statLossDollar: document.getElementById('statLossDollar'),
+    statLossPct: document.getElementById('statLossPct'),
+    statMovement: document.getElementById('statMovement'),
+    statRounds: document.getElementById('statRounds'),
+    roundTableBody: document.getElementById('roundTableBody'),
+    tierCompare: document.getElementById('tierCompare'),
+    chart: document.getElementById('chart'),
+    barTip: document.getElementById('barTip')
+  };
+
+  var tierButtons = Array.prototype.slice.call(document.querySelectorAll('.tier-btn'));
+  var langButtons = Array.prototype.slice.call(document.querySelectorAll('.lang-toggle button'));
+
+  function t(key) { return STRINGS[currentLang][key] || STRINGS.en[key] || key; }
+
+  function applyLanguage(lang) {
+    currentLang = lang;
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+    langButtons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.lang === lang ? 'true' : 'false'); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) {
+      var key = el.getAttribute('data-i18n');
+      el.innerHTML = t(key);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (el) {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+    });
+    recalc();
+  }
+
+  langButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { applyLanguage(btn.dataset.lang); });
+  });
+
+  function fmtMoney(n) {
+    var neg = n < 0;
+    var v = Math.abs(n);
+    var s = '$' + v.toLocaleString('en-US', { minimumFractionDigits: v < 1000 ? 2 : 0, maximumFractionDigits: v < 1000 ? 2 : 0 });
+    return (neg ? '-' : '') + s;
+  }
+  function fmtPct(n) { return n.toFixed(2) + '%'; }
+  function round2(n) { return Math.round(n * 100) / 100; }
+  function parseArray(str) {
+    return str.split(',').map(function (s) { return parseFloat(s.trim()); }).filter(function (n) { return !isNaN(n) && n > 0; });
+  }
+
+  function toDollar(value, unit, acct) {
+    if (unit === 'pips') return value * PIP_DOLLAR;
+    if (unit === 'percent') return acct * value / 100;
+    return value;
+  }
+  function fromDollar(dollarValue, unit, acct) {
+    if (unit === 'pips') return dollarValue / PIP_DOLLAR;
+    if (unit === 'percent') return acct > 0 ? dollarValue / acct * 100 : 0;
+    return dollarValue;
+  }
+
+  els.unitSelect.addEventListener('change', function () {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    var oldUnit = currentUnit;
+    var newUnit = els.unitSelect.value;
+    var tpDollar = toDollar(parseFloat(els.tpValue.value) || 0, oldUnit, acct);
+    var slDollar = toDollar(parseFloat(els.slValue.value) || 0, oldUnit, acct);
+    currentUnit = newUnit;
+    els.tpValue.value = round2(fromDollar(tpDollar, newUnit, acct));
+    els.slValue.value = round2(fromDollar(slDollar, newUnit, acct));
+    recalc();
+  });
+
+  function setSLFromTarget() {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    var pct = Math.round(parseFloat(els.targetPct.value)) || 0;
+    els.targetPct.value = pct;
+    var arr = parseArray(els.arrayInput.value);
+    var sum = arr.reduce(function (a, b) { return a + b; }, 0);
+    if (sum <= 0) return;
+    var targetLossDollar = acct * pct / 100;
+    var slDollar = targetLossDollar / sum;
+    var oldSLDollar = toDollar(parseFloat(els.slValue.value) || fromDollar(slDollar, currentUnit, acct), currentUnit, acct) || slDollar;
+    var oldTPDollar = toDollar(parseFloat(els.tpValue.value) || fromDollar(slDollar * 2, currentUnit, acct), currentUnit, acct) || slDollar * 2;
+    var ratio = oldSLDollar > 0 ? oldTPDollar / oldSLDollar : 2;
+    els.slValue.value = round2(fromDollar(slDollar, currentUnit, acct));
+    els.tpValue.value = round2(fromDollar(slDollar * ratio, currentUnit, acct));
+  }
+
+  function applyTier(tier) {
+    activeTier = tier;
+    tierButtons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.tier === tier ? 'true' : 'false'); });
+    if (tier !== 'custom') {
+      els.arrayInput.value = TIERS[tier].array.join(',');
+      els.targetPct.value = TIERS[tier].pct;
+      setSLFromTarget();
+    }
+    recalc();
+  }
+
+  tierButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { applyTier(btn.dataset.tier); });
+  });
+
+  els.arrayInput.addEventListener('input', function () {
+    if (activeTier !== 'custom') applyTier('custom');
+    else recalc();
+  });
+  ['accountSize', 'tpValue', 'slValue'].forEach(function (id) {
+    els[id].addEventListener('input', function () {
+      if (id !== 'accountSize' && activeTier !== 'custom') applyTier('custom');
+      else recalc();
+    });
+  });
+  els.targetPct.addEventListener('input', function () {
+    if (TIERS[activeTier]) setSLFromTarget();
+    recalc();
+  });
+
+  function computeSeries(arr, sl, tp) {
+    var cum = 0;
+    var rows = [];
+    for (var i = 0; i < arr.length; i++) {
+      var slRound = sl * arr[i];
+      var tpRound = tp * arr[i];
+      var netOnWin = tpRound - cum;
+      rows.push({ round: i + 1, mult: arr[i], tp: tpRound, sl: slRound, cumLoss: cum + slRound, netOnWin: netOnWin });
+      cum += slRound;
+    }
+    return rows;
+  }
+
+  function renderTable(rows) {
+    var html = '';
+    rows.forEach(function (r, idx) {
+      var isLast = idx === rows.length - 1;
+      html += '<tr' + (isLast ? ' class="exhausted"' : '') + '>' +
+        '<td>' + r.round + '</td>' +
+        '<td class="num">' + r.mult + '&times;</td>' +
+        '<td class="num">' + fmtMoney(r.tp) + '</td>' +
+        '<td class="num loss">-' + fmtMoney(r.sl).slice(1) + '</td>' +
+        '<td class="num loss">-' + fmtMoney(r.cumLoss).slice(1) + '</td>' +
+        '<td class="num ' + (r.netOnWin >= 0 ? 'profit' : 'loss') + '">' + (r.netOnWin >= 0 ? '+' : '-') + fmtMoney(Math.abs(r.netOnWin)).slice(1) + '</td>' +
+        '</tr>';
+    });
+    els.roundTableBody.innerHTML = html;
+  }
+
+  function rampColor(frac) {
+    var stops = ['--ramp-1', '--ramp-2', '--ramp-3', '--ramp-4'];
+    var css = getComputedStyle(document.documentElement);
+    var idx = frac * (stops.length - 1);
+    var i0 = Math.floor(idx), i1 = Math.min(i0 + 1, stops.length - 1);
+    var f = idx - i0;
+    return mixHex(css.getPropertyValue(stops[i0]).trim(), css.getPropertyValue(stops[i1]).trim(), f);
+  }
+  function mixHex(a, b, frac) {
+    function h2r(h) { h = h.replace('#', ''); return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]; }
+    var ca = h2r(a), cb = h2r(b);
+    return 'rgb(' + Math.round(ca[0]+(cb[0]-ca[0])*frac) + ',' + Math.round(ca[1]+(cb[1]-ca[1])*frac) + ',' + Math.round(ca[2]+(cb[2]-ca[2])*frac) + ')';
+  }
+
+  function renderChart(rows) {
+    var svg = els.chart;
+    var W = svg.clientWidth || 800, H = 220;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = '';
+    if (!rows.length) return;
+
+    var padL = 8, padR = 8, padB = 24;
+    var plotW = W - padL - padR, plotH = H - 10 - padB;
+    var maxLoss = rows[rows.length - 1].cumLoss;
+    var n = rows.length;
+    var gap = 4;
+    var barW = Math.max(4, (plotW - gap * (n - 1)) / n);
+
+    var ns = 'http://www.w3.org/2000/svg';
+    var css = getComputedStyle(document.documentElement);
+
+    var base = document.createElementNS(ns, 'line');
+    base.setAttribute('x1', padL); base.setAttribute('x2', W - padR);
+    base.setAttribute('y1', H - padB); base.setAttribute('y2', H - padB);
+    base.setAttribute('stroke', css.getPropertyValue('--border').trim()); base.setAttribute('stroke-width', '1');
+    svg.appendChild(base);
+
+    rows.forEach(function (r, i) {
+      var x = padL + i * (barW + gap);
+      var h = maxLoss > 0 ? (r.cumLoss / maxLoss) * plotH : 0;
+      var y = H - padB - h;
+      var rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('x', x); rect.setAttribute('y', y);
+      rect.setAttribute('width', barW); rect.setAttribute('height', Math.max(h, 2));
+      rect.setAttribute('rx', Math.min(4, barW / 2));
+      rect.setAttribute('fill', rampColor(maxLoss > 0 ? r.cumLoss / maxLoss : 0));
+      rect.style.cursor = 'pointer';
+      rect.addEventListener('mousemove', function (ev) {
+        var box = svg.getBoundingClientRect();
+        els.barTip.style.left = (ev.clientX - box.left) + 'px';
+        els.barTip.style.top = (ev.clientY - box.top - 10) + 'px';
+        els.barTip.style.opacity = '1';
+        els.barTip.textContent = t('chartTip').replace('{n}', r.round).replace('{v}', fmtMoney(-r.cumLoss));
+      });
+      rect.addEventListener('mouseleave', function () { els.barTip.style.opacity = '0'; });
+      svg.appendChild(rect);
+
+      if (n <= 16 || i === n - 1 || i === 0 || i % 2 === 0) {
+        var label = document.createElementNS(ns, 'text');
+        label.setAttribute('x', x + barW / 2);
+        label.setAttribute('y', H - padB + 14);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('font-size', '9.5');
+        label.setAttribute('font-family', 'IBM Plex Mono, monospace');
+        label.setAttribute('fill', css.getPropertyValue('--text-muted').trim());
+        label.textContent = r.round;
+        svg.appendChild(label);
+      }
+    });
+  }
+
+  function tierStats(tierKey, acct) {
+    var tier = TIERS[tierKey];
+    var sum = tier.array.reduce(function (a, b) { return a + b; }, 0);
+    var targetLoss = acct * tier.pct / 100;
+    var sl = targetLoss / sum;
+    return { pct: tier.pct, loss: targetLoss, movement: sl * tier.array.length, rounds: tier.array.length };
+  }
+
+  function renderTierCompare() {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    var names = { low: t('tierLow'), mid: t('tierMid'), high: t('tierHigh') };
+    var html = '';
+    ['low', 'mid', 'high'].forEach(function (k) {
+      var s = tierStats(k, acct);
+      html += '<div class="tier-card">' +
+        '<div class="tier-name">' + names[k] + '</div>' +
+        '<dl>' +
+        '<dt>' + t('cardTarget') + '</dt><dd>' + s.pct + t('ofAccount') + '</dd>' +
+        '<dt>' + t('cardLoss') + '</dt><dd class="loss">' + fmtMoney(-s.loss) + '</dd>' +
+        '<dt>' + t('cardMovement') + '</dt><dd>' + fmtMoney(s.movement) + '</dd>' +
+        '<dt>' + t('cardRounds') + '</dt><dd>' + s.rounds + '</dd>' +
+        '</dl></div>';
+    });
+    els.tierCompare.innerHTML = html;
+  }
+
+  function recalc() {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    var tp = toDollar(parseFloat(els.tpValue.value) || 0, currentUnit, acct);
+    var sl = toDollar(parseFloat(els.slValue.value) || 0, currentUnit, acct);
+    var arr = parseArray(els.arrayInput.value);
+    if (!arr.length || sl <= 0) return;
+
+    els.ratioNote.textContent = (tp / sl).toFixed(2) + ' : 1';
+
+    var rows = computeSeries(arr, sl, tp);
+    var totalLoss = rows[rows.length - 1].cumLoss;
+    var movement = sl * arr.length;
+
+    els.statLossDollar.textContent = fmtMoney(-totalLoss);
+    els.statLossPct.textContent = acct > 0 ? fmtPct(totalLoss / acct * 100) : '—';
+    els.statMovement.textContent = fmtMoney(movement);
+    els.statRounds.textContent = arr.length;
+
+    renderTable(rows);
+    renderChart(rows);
+    renderTierCompare();
+    if (window.__sosRefresh) window.__sosRefresh();
+  }
+
+  window.addEventListener('resize', function () {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    var tp = toDollar(parseFloat(els.tpValue.value) || 0, currentUnit, acct);
+    var sl = toDollar(parseFloat(els.slValue.value) || 0, currentUnit, acct);
+    var arr = parseArray(els.arrayInput.value);
+    if (arr.length && sl > 0) renderChart(computeSeries(arr, sl, tp));
+  });
+
+  // ==========================================================================
+  //  Modes: risk ledger (above), survival simulation, uploaded-account replay
+  // ==========================================================================
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function byId(id) { return document.getElementById(id); }
+  function svgEl(name, attrs) {
+    var el = document.createElementNS(NS, name);
+    for (var k in attrs) { if (attrs.hasOwnProperty(k)) el.setAttribute(k, attrs[k]); }
+    return el;
+  }
+  function tokenColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function clearSvg(svg, W, H) {
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  function attachTip(svg, tipEl, textFor) {
+    svg.addEventListener('mousemove', function (ev) {
+      var box = svg.getBoundingClientRect();
+      var txt = textFor(ev.clientX - box.left, box.width);
+      if (txt === null) { tipEl.style.opacity = '0'; return; }
+      tipEl.style.opacity = '1';
+      tipEl.innerHTML = txt;
+      tipEl.style.left = Math.max(60, Math.min(box.width - 60, ev.clientX - box.left)) + 'px';
+      tipEl.style.top = (ev.clientY - box.top - 12) + 'px';
+    });
+    svg.addEventListener('mouseleave', function () { tipEl.style.opacity = '0'; });
+  }
+
+  // ---- deterministic PRNG so a given set of inputs always renders the same run
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function niceTicks(lo, hi, n) {
+    var span = hi - lo;
+    if (!(span > 0)) return [lo];
+    var raw = span / n;
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+    var ticks = [];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step) ticks.push(v);
+    return ticks.length ? ticks : [lo, hi];
+  }
+
+
+  function cfg() {
+    var acct = parseFloat(els.accountSize.value) || 0;
+    return {
+      acct: acct,
+      tp: toDollar(parseFloat(els.tpValue.value) || 0, currentUnit, acct),
+      sl: toDollar(parseFloat(els.slValue.value) || 0, currentUnit, acct),
+      arr: parseArray(els.arrayInput.value)
+    };
+  }
+
+  // ==========================================================================
+  //  Mode switching
+  // ==========================================================================
+  var MODES = ['ledger', 'account', 'replay'];
+  var currentMode = 'ledger';
+  var modeButtons = Array.prototype.slice.call(document.querySelectorAll('.mode-switch button'));
+
+  function setMode(m) {
+    currentMode = m;
+    modeButtons.forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false');
+    });
+    MODES.forEach(function (k) { byId('mode-' + k).hidden = (k !== m); });
+    renderActiveMode();
+  }
+  modeButtons.forEach(function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.mode); });
+  });
+
+  // ==========================================================================
+  //  Your account — read a broker report, measure the real losing streaks
+  // ==========================================================================
+  var acctTrades = null, acctLabel = '';
+
+  function parseNum(raw) {
+    if (raw == null) return NaN;
+    var s = String(raw).replace(/[\s  ]/g, '').replace(/−/g, '-');
+    if (!s) return NaN;
+    var neg = /^\(.*\)$/.test(s);
+    if (neg) s = s.slice(1, -1);
+    var lastDot = s.lastIndexOf('.'), lastCom = s.lastIndexOf(',');
+    if (lastDot > -1 && lastCom > -1) {
+      if (lastDot > lastCom) s = s.replace(/,/g, '');
+      else s = s.replace(/\./g, '').replace(',', '.');
+    } else if (lastCom > -1) {
+      if (/^-?\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+      else s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(s);
+    return isNaN(n) ? NaN : (neg ? -n : n);
+  }
+
+  var COL = {
+    profit: /^(profit|profit\/loss|p\/l|net\s*p\/l|سود|سود\s*\/\s*زیان|سود و زیان)$/i,
+    commission: /^(commission|comm\.?|کمیسیون)$/i,
+    swap: /^(swap|storage|سواپ|بهره)$/i,
+    fee: /^(fee|fees|taxes|tax|کارمزد|مالیات)$/i,
+    type: /^(type|نوع)$/i
+  };
+  var SKIP_TYPE = /^(balance|credit|deposit|withdrawal|correction|bonus)$/i;
+
+  var TRAILING = { profit: 1, commission: 1, swap: 1, fee: 1 };
+
+  function headerIndices(cells) {
+    var idx = {}, found = false;
+    for (var i = 0; i < cells.length; i++) {
+      var c = (cells[i] || '').trim();
+      for (var key in COL) {
+        if (COL.hasOwnProperty(key) && idx[key] === undefined && COL[key].test(c)) {
+          idx[key] = i;
+          if (key === 'profit') found = true;
+        }
+      }
+    }
+    if (!found) return null;
+    idx.__len = cells.length;
+    idx.__fromEnd = {};
+    for (var k in TRAILING) {
+      if (TRAILING.hasOwnProperty(k) && idx[k] !== undefined) idx.__fromEnd[k] = cells.length - idx[k];
+    }
+    return idx;
+  }
+
+  // Money columns sit at the end of every MT4/MT5 report, so when a data row is still
+  // wider than its header the right-hand offset is the trustworthy one.
+  function cellFor(cells, idx, key) {
+    if (idx[key] === undefined) return undefined;
+    if (cells.length !== idx.__len && idx.__fromEnd[key] !== undefined) {
+      var j = cells.length - idx.__fromEnd[key];
+      if (j >= 0 && j < cells.length) return cells[j];
+    }
+    return cells[idx[key]];
+  }
+
+  function extractTrades(rows) {
+    var groups = [], section = '', cur = null;
+    rows.forEach(function (raw) {
+      var cells = raw.map(function (x) { return (x == null ? '' : String(x)).replace(/ /g, ' ').trim(); });
+      var nonEmpty = cells.filter(function (x) { return x !== ''; });
+      if (nonEmpty.length === 0) return;
+      if (nonEmpty.length === 1 && cells.length <= 3) { section = nonEmpty[0].toLowerCase(); cur = null; return; }
+      var idx = headerIndices(cells);
+      if (idx) { cur = { section: section, idx: idx, trades: [] }; groups.push(cur); return; }
+      if (!cur) return;
+      if (cur.idx.type !== undefined && SKIP_TYPE.test(cells[cur.idx.type] || '')) return;
+      var p = parseNum(cellFor(cells, cur.idx, 'profit'));
+      if (isNaN(p)) return;
+      ['commission', 'swap', 'fee'].forEach(function (k) {
+        if (cur.idx[k] !== undefined) {
+          var v = parseNum(cellFor(cells, cur.idx, k));
+          if (!isNaN(v)) p += v;
+        }
+      });
+      if (p === 0) return;
+      cur.trades.push({ profit: p });
+    });
+
+    var positions = groups.filter(function (g) { return /position/i.test(g.section) && g.trades.length; });
+    var pool = positions.length ? positions : groups.filter(function (g) { return g.trades.length; });
+    if (!pool.length) return [];
+    pool.sort(function (a, b) { return b.trades.length - a.trades.length; });
+    return pool[0].trades;
+  }
+
+  function decodeBytes(buf) {
+    var bytes = new Uint8Array(buf);
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf);
+    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
+    var nul = 0, lim = Math.min(600, bytes.length);
+    for (var i = 0; i < lim; i++) if (bytes[i] === 0) nul++;
+    if (nul > lim * 0.2) return new TextDecoder('utf-16le').decode(buf);
+    return new TextDecoder('utf-8').decode(buf);
+  }
+
+  function isHiddenCell(td) {
+    if (td.hasAttribute && td.hasAttribute('hidden')) return true;
+    var cls = (td.getAttribute && td.getAttribute('class')) || '';
+    if (/(^|\s)hidden(\s|$)/.test(cls)) return true;
+    var st = ((td.getAttribute && td.getAttribute('style')) || '').replace(/\s/g, '').toLowerCase();
+    return st.indexOf('display:none') > -1;
+  }
+
+  function rowsFromHtml(text) {
+    var doc = new DOMParser().parseFromString(text, 'text/html');
+    return Array.prototype.map.call(doc.querySelectorAll('tr'), function (tr) {
+      var out = [];
+      Array.prototype.forEach.call(tr.children, function (td) {
+        // MT5 hides a comment cell inside each position row; keeping it would shift
+        // every money column one place away from the header it belongs to.
+        if (!isHiddenCell(td)) out.push(td.textContent || '');
+      });
+      return out;
+    });
+  }
+
+  function rowsFromDelimited(text) {
+    var delim = (text.indexOf('\t') > -1 && text.indexOf('\t') < text.indexOf('\n')) ? '\t' : ',';
+    return text.split(/\r?\n/).map(function (line) {
+      var out = [], cur = '', q = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (q) {
+          if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+          else cur += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === delim) { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out;
+    });
+  }
+
+  function ensureXLSX(cb, fail) {
+    if (window.XLSX) return cb();
+    var sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = function () { cb(); };
+    sc.onerror = function () { fail(); };
+    document.head.appendChild(sc);
+  }
+
+  function showAcctError(msg) {
+    var box = byId('acctError');
+    box.textContent = msg;
+    box.hidden = false;
+    byId('acctResults').hidden = true;
+    byId('acctIntro').hidden = false;
+  }
+
+  function loadFile(file) {
+    var name = (file.name || '').toLowerCase();
+    var reader = new FileReader();
+    reader.onerror = function () { showAcctError(t('errRead')); };
+    if (/\.(xlsx|xls)$/.test(name)) {
+      reader.onload = function (e) {
+        ensureXLSX(function () {
+          try {
+            var wb = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            var rows = [];
+            wb.SheetNames.forEach(function (sn) {
+              rows = rows.concat(window.XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' }));
+            });
+            acceptTrades(extractTrades(rows), file.name);
+          } catch (err) { showAcctError(t('errParse')); }
+        }, function () { showAcctError(t('errXlsx')); });
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = function (e) {
+        try {
+          var text = decodeBytes(e.target.result);
+          var rows = /<\s*(table|tr|html)/i.test(text) ? rowsFromHtml(text) : rowsFromDelimited(text);
+          acceptTrades(extractTrades(rows), file.name);
+        } catch (err) { showAcctError(t('errParse')); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  function acceptTrades(trades, label) {
+    if (!trades || !trades.length) return showAcctError(t('errNoTrades'));
+    if (trades.length < 20) return showAcctError(t('errTooFew').replace('{n}', trades.length));
+    acctTrades = trades;
+    acctLabel = label;
+    byId('acctError').hidden = true;
+    byId('acctIntro').hidden = true;
+    byId('acctResults').hidden = false;
+    byId('fileChipName').textContent = label;
+    renderAccount();
+  }
+
+  // A generated demo account, not a real one. Deliberately tuned to a realistic
+  // 35% win rate at roughly 2:1, which is where an honest XAUUSD setup actually
+  // sits — profitable-looking runs interrupted by streaks the ladder cannot hold.
+  function sampleTrades() {
+    var rnd = mulberry32(2), out = [], R = 25;
+    for (var w = 0; w < 16; w++) rnd();
+    for (var k = 0; k < 420; k++) {
+      if (rnd() < 0.35) out.push({ profit: R * (1.75 + rnd() * 0.55) });
+      else out.push({ profit: -R * (0.88 + rnd() * 0.26) });
+    }
+    return out;
+  }
+
+  function analyzeTrades(trades) {
+    var wins = 0, losses = 0, sumWin = 0, sumLoss = 0;
+    var streak = 0, longest = 0, counts = {};
+    trades.forEach(function (tr) {
+      if (tr.profit > 0) {
+        wins++; sumWin += tr.profit;
+        if (streak > 0) { counts[streak] = (counts[streak] || 0) + 1; if (streak > longest) longest = streak; }
+        streak = 0;
+      } else {
+        losses++; sumLoss += Math.abs(tr.profit); streak++;
+      }
+    });
+    if (streak > 0) { counts[streak] = (counts[streak] || 0) + 1; if (streak > longest) longest = streak; }
+    return {
+      n: trades.length, wins: wins, losses: losses,
+      winRate: trades.length ? wins / trades.length : 0,
+      avgWin: wins ? sumWin / wins : 0,
+      avgLoss: losses ? sumLoss / losses : 0,
+      longest: longest, counts: counts
+    };
+  }
+
+  function simulateOnSequence(trades, arr, sl, tp, acct) {
+    var bal = acct, i = 0, peak = acct, maxDD = 0, breaches = 0, curve = [acct];
+    var hasLadder = arr.length > 1;
+    trades.forEach(function (tr) {
+      var mult = arr[i];
+      if (tr.profit > 0) { bal += tp * mult; i = 0; }
+      else { bal -= sl * mult; i++; if (i >= arr.length) { if (hasLadder) breaches++; i = 0; } }
+      if (bal < 0) bal = 0;
+      if (bal > peak) peak = bal;
+      var dd = peak > 0 ? (peak - bal) / peak : 0;
+      if (dd > maxDD) maxDD = dd;
+      curve.push(bal);
+    });
+    return { curve: curve, end: bal, maxDD: maxDD, breaches: hasLadder ? breaches : null };
+  }
+
+  function renderStreakChart(counts, cap) {
+    var svg = byId('streakChart');
+    var W = svg.clientWidth || 800, H = 240;
+    clearSvg(svg, W, H);
+    var keys = Object.keys(counts).map(Number).sort(function (a, b) { return a - b; });
+    if (!keys.length) return;
+    var maxK = Math.max(keys[keys.length - 1], cap);
+    var maxV = 0;
+    keys.forEach(function (k) { if (counts[k] > maxV) maxV = counts[k]; });
+
+    var padL = 44, padR = 14, padT = 12, padB = 32;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var slots = maxK, gap = Math.min(6, plotW / slots * 0.25);
+    var barW = Math.max(3, (plotW - gap * (slots - 1)) / slots);
+    var mutedCol = tokenColor('--text-muted'), accent = tokenColor('--series-recovery');
+
+    svg.appendChild(svgEl('line', {
+      x1: padL, x2: W - padR, y1: padT + plotH, y2: padT + plotH,
+      stroke: tokenColor('--border'), 'stroke-width': 1
+    }));
+
+    for (var k = 1; k <= maxK; k++) {
+      var v = counts[k] || 0;
+      var x = padL + (k - 1) * (barW + gap);
+      var h = maxV > 0 ? (v / maxV) * plotH : 0;
+      if (v > 0) {
+        var beyond = k >= cap;
+        var rect = svgEl('rect', {
+          x: x, y: padT + plotH - h, width: barW, height: Math.max(h, 2),
+          rx: Math.min(4, barW / 2), fill: beyond ? tokenColor('--danger') : accent
+        });
+        rect.style.cursor = 'pointer';
+        (function (kk, vv, bb) {
+          rect.addEventListener('mousemove', function (ev) {
+            var box = svg.getBoundingClientRect(), tip = byId('streakTip');
+            tip.style.opacity = '1';
+            tip.innerHTML = t('streakTip').replace('{k}', kk).replace('{v}', vv) +
+              (bb ? ' &middot; ' + t('streakBeyond') : '');
+            tip.style.left = (ev.clientX - box.left) + 'px';
+            tip.style.top = (ev.clientY - box.top - 12) + 'px';
+          });
+          rect.addEventListener('mouseleave', function () { byId('streakTip').style.opacity = '0'; });
+        })(k, v, beyond);
+        svg.appendChild(rect);
+      }
+      if (maxK <= 20 || k === 1 || k === maxK || k % Math.ceil(maxK / 12) === 0) {
+        var lab = svgEl('text', {
+          x: x + barW / 2, y: H - 16, 'text-anchor': 'middle', 'font-size': 10,
+          'font-family': 'IBM Plex Mono, monospace', fill: mutedCol
+        });
+        lab.textContent = k;
+        svg.appendChild(lab);
+      }
+    }
+
+    var axisLab = svgEl('text', {
+      x: padL + plotW / 2, y: H - 2, 'text-anchor': 'middle', 'font-size': 10.5,
+      'font-family': 'Public Sans, sans-serif', fill: mutedCol
+    });
+    axisLab.textContent = t('streakAxis');
+    svg.appendChild(axisLab);
+
+    // ladder capacity threshold
+    var capX = padL + (cap - 1) * (barW + gap) - gap / 2;
+    if (cap <= maxK) {
+      svg.appendChild(svgEl('line', {
+        x1: capX, x2: capX, y1: padT, y2: padT + plotH,
+        stroke: tokenColor('--danger'), 'stroke-width': 2, 'stroke-dasharray': '4 3'
+      }));
+      var cl = svgEl('text', {
+        x: capX + 5, y: padT + 11, 'font-size': 10, 'font-weight': 600,
+        'font-family': 'Public Sans, sans-serif', fill: tokenColor('--danger')
+      });
+      cl.textContent = t('capLabel').replace('{n}', cap);
+      svg.appendChild(cl);
+    }
+  }
+
+  function renderEquityChart(series, acct) {
+    var svg = byId('equityChart');
+    var W = svg.clientWidth || 800, H = 300;
+    clearSvg(svg, W, H);
+    var n = series[0].curve.length;
+    if (n < 2) return;
+
+    var padL = 62, padR = 58, padT = 12, padB = 30;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var hi = acct, lo = acct;
+    series.forEach(function (s) {
+      s.curve.forEach(function (v) { if (v > hi) hi = v; if (v < lo) lo = v; });
+    });
+    hi = hi + (hi - lo) * 0.06; lo = Math.max(0, lo - (hi - lo) * 0.06);
+    if (hi === lo) hi = lo + 1;
+
+    function X(i) { return padL + (i / (n - 1)) * plotW; }
+    function Y(v) { return padT + plotH - ((v - lo) / (hi - lo)) * plotH; }
+    var mutedCol = tokenColor('--text-muted'), gridCol = tokenColor('--border');
+
+    niceTicks(lo, hi, 4).forEach(function (val) {
+      var y = Y(val);
+      svg.appendChild(svgEl('line', {
+        x1: padL, x2: W - padR, y1: y, y2: y, stroke: gridCol, 'stroke-width': 1, opacity: 0.5
+      }));
+      var lab = svgEl('text', {
+        x: padL - 8, y: y + 3.5, 'text-anchor': 'end', 'font-size': 10,
+        'font-family': 'IBM Plex Mono, monospace', fill: mutedCol
+      });
+      lab.textContent = fmtMoney(val);
+      svg.appendChild(lab);
+    });
+
+    var step = Math.max(1, Math.floor(n / 400));
+    // Solid lines first, the dashed baseline last, so it stays visible where the
+    // three curves sit on top of each other.
+    var order = series.slice().sort(function (a, b) { return (a.dashed ? 1 : 0) - (b.dashed ? 1 : 0); });
+    var ends = [];
+    order.forEach(function (s) {
+      var d = '';
+      for (var i = 0; i < n; i += step) d += (d ? 'L' : 'M') + X(i) + ' ' + Y(s.curve[i]);
+      d += 'L' + X(n - 1) + ' ' + Y(s.curve[n - 1]);
+      var attrs = {
+        d: d, fill: 'none', stroke: tokenColor(s.token), 'stroke-width': 2,
+        'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+      };
+      if (s.dashed) attrs['stroke-dasharray'] = '5 4';
+      svg.appendChild(svgEl('path', attrs));
+      ends.push({ y: Y(s.curve[n - 1]), text: fmtMoney(s.curve[n - 1]), color: tokenColor(s.token) });
+    });
+
+    // Nudge end labels apart when the curves finish within a few dollars of each other.
+    ends.sort(function (a, b) { return a.y - b.y; });
+    var GAP = 12;
+    for (var e = 1; e < ends.length; e++) {
+      if (ends[e].y - ends[e - 1].y < GAP) ends[e].y = ends[e - 1].y + GAP;
+    }
+    var overflow = ends.length ? ends[ends.length - 1].y - (padT + plotH) : 0;
+    if (overflow > 0) ends.forEach(function (p) { p.y -= overflow; });
+    ends.forEach(function (p) {
+      var lab = svgEl('text', {
+        x: W - padR + 6, y: p.y + 3.5, 'font-size': 10.5, 'font-weight': 600,
+        'font-family': 'IBM Plex Mono, monospace', fill: p.color
+      });
+      lab.textContent = p.text;
+      svg.appendChild(lab);
+    });
+
+    [0, n - 1].forEach(function (i) {
+      var lab = svgEl('text', {
+        x: X(i), y: H - 10, 'text-anchor': i === 0 ? 'start' : 'end', 'font-size': 10,
+        'font-family': 'IBM Plex Mono, monospace', fill: mutedCol
+      });
+      lab.textContent = i === 0 ? '1' : n - 1 + ' ' + t('tradesUnit');
+      svg.appendChild(lab);
+    });
+
+    var cursor = svgEl('line', {
+      x1: 0, x2: 0, y1: padT, y2: padT + plotH, stroke: mutedCol, 'stroke-width': 1, opacity: 0
+    });
+    svg.appendChild(cursor);
+    attachTip(svg, byId('equityTip'), function (px, boxW) {
+      var sx = px * (W / boxW);
+      if (sx < padL || sx > W - padR) { cursor.setAttribute('opacity', 0); return null; }
+      var i = Math.round(((sx - padL) / plotW) * (n - 1));
+      i = Math.max(0, Math.min(n - 1, i));
+      cursor.setAttribute('opacity', 0.45);
+      cursor.setAttribute('x1', X(i)); cursor.setAttribute('x2', X(i));
+      var parts = series.map(function (s) { return s.label + ' ' + fmtMoney(s.curve[i]); });
+      return t('equityTip').replace('{n}', i) + '<br>' + parts.join('<br>');
+    });
+  }
+
+  function renderAccount() {
+    if (!acctTrades) return;
+    var c = cfg();
+    if (!c.arr.length || c.sl <= 0) return;
+    var a = analyzeTrades(acctTrades);
+    var cap = c.arr.length;
+
+    byId('statTrades').textContent = a.n.toLocaleString('en-US');
+    byId('statTradesSub').textContent = t('winsLosses').replace('{w}', a.wins).replace('{l}', a.losses);
+    byId('statWinRateOut').textContent = (a.winRate * 100).toFixed(1) + '%';
+    byId('statWinRateSub').textContent = a.avgLoss > 0
+      ? t('avgRatio').replace('{r}', (a.avgWin / a.avgLoss).toFixed(2))
+      : '—';
+    byId('statStreak').textContent = a.longest;
+    var reached = Math.min(a.longest, cap);
+    var breached = a.longest >= cap;
+    byId('statDepth').textContent = reached + ' / ' + cap;
+    byId('statDepthSub').textContent = breached ? t('depthBreached') : t('depthHeadroom').replace('{n}', cap - a.longest);
+    byId('statDepth').parentNode.className = 'stat' + (breached ? ' danger' : ' good');
+
+    var v = byId('acctVerdict');
+    v.className = 'verdict ' + (breached ? 'is-bad' : 'is-good');
+    byId('acctVerdictIcon').textContent = breached ? '⚠' : '✓';
+    byId('acctVerdictTitle').textContent = breached ? t('aBadTitle') : t('aGoodTitle');
+    var capCost = c.arr.reduce(function (x, y) { return x + y; }, 0) * c.sl;
+    byId('acctVerdictBody').textContent = (breached ? t('aBadBody') : t('aGoodBody'))
+      .replace('{streak}', a.longest).replace('{cap}', cap)
+      .replace('{cost}', fmtMoney(capCost))
+      .replace('{head}', cap - a.longest);
+
+    renderStreakChart(a.counts, cap);
+
+    // All three lines share one unit: 1R = the round-1 stop loss in the rail.
+    var scale = a.avgLoss > 0 ? c.sl / a.avgLoss : 1;
+    var actual = [c.acct], bal = c.acct, peak = c.acct, actualDD = 0;
+    acctTrades.forEach(function (tr) {
+      bal += tr.profit * scale;
+      if (bal < 0) bal = 0;
+      if (bal > peak) peak = bal;
+      var dd = peak > 0 ? (peak - bal) / peak : 0;
+      if (dd > actualDD) actualDD = dd;
+      actual.push(bal);
+    });
+    var rec = simulateOnSequence(acctTrades, c.arr, c.sl, c.tp, c.acct);
+    var flat = simulateOnSequence(acctTrades, [1], c.sl, c.tp, c.acct);
+
+    renderEquityChart([
+      { curve: actual, token: '--series-baseline', dashed: true, label: t('legActual') },
+      { curve: rec.curve, token: '--series-recovery', label: t('legRecovery') },
+      { curve: flat.curve, token: '--series-flat', label: t('legFlat') }
+    ], c.acct);
+
+    var rows = [
+      { k: 'legActual', end: actual[actual.length - 1], dd: actualDD, br: null },
+      { k: 'legRecovery', end: rec.end, dd: rec.maxDD, br: rec.breaches },
+      { k: 'legFlat', end: flat.end, dd: flat.maxDD, br: flat.breaches }
+    ];
+    var body = '';
+    rows.forEach(function (r) {
+      var ch = c.acct > 0 ? (r.end - c.acct) / c.acct * 100 : 0;
+      body += '<tr>' +
+        '<td>' + t(r.k) + '</td>' +
+        '<td class="num">' + fmtMoney(r.end) + '</td>' +
+        '<td class="num ' + (ch >= 0 ? 'profit' : 'loss') + '">' + (ch >= 0 ? '+' : '') + ch.toFixed(1) + '%</td>' +
+        '<td class="num">' + (r.dd * 100).toFixed(1) + '%</td>' +
+        '<td class="num' + (r.br ? ' loss' : '') + '">' + (r.br === null ? '&mdash;' : r.br) + '</td>' +
+        '</tr>';
+    });
+    byId('equityTableBody').innerHTML = body;
+  }
+
+  // ---- upload wiring
+  var dropZone = byId('dropZone'), fileInput = byId('fileInput');
+  byId('chooseBtn').addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
+  byId('sampleBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    acceptTrades(sampleTrades(), t('sampleName'));
+  });
+  dropZone.addEventListener('click', function () { fileInput.click(); });
+  dropZone.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) loadFile(fileInput.files[0]);
+  });
+  ['dragenter', 'dragover'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) { e.preventDefault(); dropZone.classList.add('is-over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) { e.preventDefault(); dropZone.classList.remove('is-over'); });
+  });
+  dropZone.addEventListener('drop', function (e) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+  byId('resetBtn').addEventListener('click', function () {
+    acctTrades = null;
+    fileInput.value = '';
+    byId('acctResults').hidden = true;
+    byId('acctError').hidden = true;
+    byId('acctIntro').hidden = false;
+  });
+
+
+  // ==========================================================================
+  //  Replay — the same ladder as a 9:16 clip, driven by whichever data is loaded
+  // ==========================================================================
+  var REAL_RUNS = [{"id":"clean1","losses":1,"peak":0.01,"cum":-4.77,"win":10.03,"net":5.26,"reset":false,"t":[{"s":"b","v":0.01,"o":4469.374,"c":4464.686,"sl":4464.559,"tp":4479.005,"n":-4.77,"k":"15:22","e":"15:23"},{"s":"b","v":0.01,"o":4464.944,"c":4475.056,"sl":4460.129,"tp":4474.575,"n":10.03,"k":"15:23","e":"15:29"}]},{"id":"clean2","losses":2,"peak":0.02,"cum":-15.21,"win":17.62,"net":2.41,"reset":false,"t":[{"s":"b","v":0.01,"o":4475.474,"c":4470.386,"sl":4470.474,"tp":4485.662,"n":-5.17,"k":"11:53","e":"12:13"},{"s":"s","v":0.02,"o":4469.656,"c":4474.584,"sl":4474.656,"tp":4459.458,"n":-10.04,"k":"12:13","e":"13:33"},{"s":"s","v":0.02,"o":4473.676,"c":4464.774,"sl":4478.01,"tp":4464.81,"n":17.62,"k":"13:45","e":"15:14"}]},{"id":"clean3","losses":3,"peak":0.03,"cum":-21.7,"win":25.16,"net":3.46,"reset":false,"t":[{"s":"b","v":0.01,"o":4397.064,"c":4392.596,"sl":4392.92,"tp":4405.351,"n":-4.55,"k":"15:44","e":"15:45"},{"s":"b","v":0.01,"o":4393.174,"c":4388.866,"sl":4389.03,"tp":4401.461,"n":-4.39,"k":"15:45","e":"15:45"},{"s":"b","v":0.02,"o":4389.224,"c":4382.936,"sl":4383.008,"tp":4401.655,"n":-12.76,"k":"15:45","e":"15:46"},{"s":"b","v":0.03,"o":4383.414,"c":4391.886,"sl":4379.27,"tp":4391.701,"n":25.16,"k":"15:46","e":"15:49"}]},{"id":"messy","losses":5,"peak":0.2,"cum":-252.03,"win":75.99,"net":-176.04,"reset":true,"t":[{"s":"b","v":0.01,"o":4402.974,"c":4397.996,"sl":4398.146,"tp":4412.63,"n":-5.06,"k":"15:30","e":"15:31"},{"s":"b","v":0.01,"o":4400.464,"c":4395.426,"sl":4395.636,"tp":4410.12,"n":-5.12,"k":"15:31","e":"15:32"},{"s":"b","v":0.2,"o":4406.734,"c":4396.446,"sl":4396.126,"tp":0.0,"n":-207.52,"k":"15:31","e":"15:32"},{"s":"b","v":0.02,"o":4397.344,"c":4391.786,"sl":4392.516,"tp":4407.0,"n":-11.3,"k":"15:32","e":"15:32"},{"s":"b","v":0.04,"o":4393.194,"c":4387.526,"sl":4389.573,"tp":4400.436,"n":-23.03,"k":"15:32","e":"15:32"},{"s":"b","v":0.06,"o":4384.244,"c":4396.996,"sl":0.0,"tp":0.0,"n":75.99,"k":"15:32","e":"15:44"}]},{"id":"blowout2","losses":8,"peak":0.22,"cum":-303.71,"win":8.51,"net":-295.2,"reset":true,"t":[{"s":"b","v":0.01,"o":4408.794,"c":4402.496,"sl":4402.397,"tp":4421.589,"n":-6.38,"k":"15:53","e":"15:57"},{"s":"b","v":0.01,"o":4402.334,"c":4396.056,"sl":4395.937,"tp":4415.129,"n":-6.36,"k":"15:57","e":"15:59"},{"s":"b","v":0.02,"o":4395.534,"c":4390.106,"sl":4391.267,"tp":4404.068,"n":-11.04,"k":"15:59","e":"16:00"},{"s":"b","v":0.03,"o":4390.934,"c":4385.296,"sl":4386.667,"tp":4399.468,"n":-17.17,"k":"16:00","e":"16:00"},{"s":"b","v":0.05,"o":4385.354,"c":4380.666,"sl":4381.087,"tp":4393.888,"n":-23.88,"k":"16:00","e":"16:00"},{"s":"b","v":0.09,"o":4380.874,"c":4376.366,"sl":4377.081,"tp":4388.459,"n":-41.35,"k":"16:00","e":"16:00"},{"s":"b","v":0.14,"o":4376.874,"c":4369.476,"sl":4372.912,"tp":4384.798,"n":-104.79,"k":"16:00","e":"16:00"},{"s":"b","v":0.22,"o":4369.854,"c":4365.726,"sl":4365.781,"tp":4378.0,"n":-92.74,"k":"16:00","e":"16:01"},{"s":"b","v":0.01,"o":4366.674,"c":4375.266,"sl":4362.407,"tp":4375.208,"n":8.51,"k":"16:01","e":"16:01"}]},{"id":"blowout1","losses":10,"peak":0.25,"cum":-516.33,"win":19.38,"net":-496.95,"reset":true,"t":[{"s":"b","v":0.01,"o":4476.274,"c":4469.636,"sl":4471.446,"tp":4485.93,"n":-6.72,"k":"15:29","e":"15:30"},{"s":"b","v":0.01,"o":4474.524,"c":4439.396,"sl":4469.696,"tp":4484.18,"n":-35.21,"k":"15:30","e":"15:30"},{"s":"b","v":0.02,"o":4443.774,"c":4436.856,"sl":4438.946,"tp":4453.43,"n":-14.02,"k":"15:30","e":"15:30"},{"s":"b","v":0.04,"o":4426.584,"c":4399.286,"sl":0.0,"tp":0.0,"n":-109.55,"k":"15:30","e":"15:30"},{"s":"s","v":0.06,"o":4398.636,"c":4400.674,"sl":4402.659,"tp":4390.589,"n":-12.75,"k":"15:30","e":"15:30"},{"s":"s","v":0.1,"o":4394.166,"c":4410.704,"sl":0.0,"tp":0.0,"n":-166.26,"k":"15:30","e":"15:30"},{"s":"s","v":0.16,"o":4410.286,"c":4411.224,"sl":4414.209,"tp":4402.44,"n":-16.43,"k":"15:30","e":"15:30"},{"s":"s","v":0.25,"o":4409.016,"c":4414.694,"sl":4413.072,"tp":4400.905,"n":-144.15,"k":"15:30","e":"15:30"},{"s":"s","v":0.01,"o":4411.616,"c":4418.314,"sl":4416.444,"tp":4401.96,"n":-6.78,"k":"15:30","e":"15:30"},{"s":"s","v":0.01,"o":4414.666,"c":4419.044,"sl":4419.494,"tp":4405.01,"n":-4.46,"k":"15:30","e":"15:30"},{"s":"s","v":0.02,"o":4414.086,"c":4404.304,"sl":4418.914,"tp":4404.43,"n":19.38,"k":"15:30","e":"15:30"}]}];
+
+  var S_INTRO = 900, S_STEP = 2200, S_TAIL = 800;
+  var S_ENTRY = 450, S_TRAVEL = 1400, S_SETTLE = 1700;
+
+  var sEl = {
+    stage: byId('stage'), cv: byId('sCanvas'),
+    headline: byId('sHeadline'), sub: byId('sSub'),
+    ladderLabel: byId('sLadderLabel'), steps: byId('sSteps'),
+    pl: byId('sPl'), count: byId('sCount'), flash: byId('sFlash'),
+    end: byId('sEnd'), ecEyebrow: byId('sEcEyebrow'), ecVerdict: byId('sEcVerdict'),
+    ecBig: byId('sEcBig'), ecMove: byId('sEcMove'), ecFoot: byId('sEcFoot'),
+    sourceRow: byId('sourceRow'), sourceNote: byId('sourceNote'), runRow: byId('runRow'),
+    play: byId('sPlay'), speed: byId('sSpeed'), speedVal: byId('sSpeedVal'), scrub: byId('sScrub'),
+    loop: byId('sLoop'), bare: byId('sBare')
+  };
+  var sCtx = sEl.cv.getContext('2d');
+  var sReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // runIdx starts unset so the first render picks the deepest recovering run.
+  var source = 'settings', runs = [], runIdx = -1, curRun = null, sScrubbing = false;
+  var replayDir = 'buy', chartMode = 'price';
+  var sTotal = 0, sElapsed = 0, sRaf = null, sLast = null, sSpeed = 1;
+  var sLoop = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  sEl.loop.checked = sLoop;
+
+  function sMoney(v, sign) {
+    return (v < 0 ? '−' : (sign ? '+' : '')) + '$' +
+      Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function sEase(x) { return 1 - Math.pow(1 - x, 3); }
+  function sClamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+  function stageColor(n) { return getComputedStyle(sEl.stage).getPropertyValue(n).trim(); }
+
+  // At the bot's base lot $1 of stop-loss equals $1 of gold price movement, so the
+  // round-1 TP and SL in dollars are also the price distances. The ladder scales
+  // volume, never distance — which is why the spreadsheet's Movement row is flat.
+  function attachPrices(trades) {
+    var p0 = parseFloat(byId('startPrice').value);
+    if (!(p0 > 0)) return false;
+    var c = cfg();
+    if (!(c.sl > 0) || !(c.tp > 0)) return false;
+    var sign = replayDir === 'buy' ? 1 : -1, entry = p0;
+    trades.forEach(function (tr) {
+      tr.s = replayDir === 'buy' ? 'b' : 's';
+      tr.o = entry;
+      tr.sl = entry - sign * c.sl;
+      tr.tp = entry + sign * c.tp;
+      if (tr.n > 0) { tr.c = tr.tp; }
+      else { tr.c = tr.sl; entry = tr.sl; }
+    });
+    return true;
+  }
+
+  function finalizeRun(r) {
+    var cum = 0, win = 0, peak = 0, losses = 0, reset = false;
+    r.trades.forEach(function (x, i) {
+      if (x.n > 0) win += x.n; else { cum += x.n; losses++; }
+      if (x.v > peak) peak = x.v;
+      if (i > 0 && x.v < r.trades[i - 1].v) reset = true;
+    });
+    r.cum = cum; r.win = win; r.losses = losses; r.peak = peak;
+    r.net = cum + win; r.reset = reset;
+    return r;
+  }
+
+  // Runs built purely from the rail, so editing the array rewrites the clip.
+  function buildSettingsRuns() {
+    var c = cfg();
+    if (!c.arr.length || c.sl <= 0) return [];
+    var n = c.arr.length, out = [], depths = [];
+    [2, Math.ceil(n / 2), n].forEach(function (d) {
+      if (d >= 2 && d <= n && depths.indexOf(d) === -1) depths.push(d);
+    });
+    depths.forEach(function (d) {
+      var tr = [];
+      for (var i = 0; i < d - 1; i++) tr.push({ v: c.arr[i], lot: '×' + c.arr[i], n: -c.sl * c.arr[i] });
+      tr.push({ v: c.arr[d - 1], lot: '×' + c.arr[d - 1], n: c.tp * c.arr[d - 1] });
+      attachPrices(tr);
+      out.push(finalizeRun({ kind: 'sim', tag: 'depth' + d, depth: d, trades: tr }));
+    });
+    var over = [];
+    for (var k = 0; k < n; k++) over.push({ v: c.arr[k], lot: '×' + c.arr[k], n: -c.sl * c.arr[k] });
+    over.push({ v: c.arr[0], lot: '×' + c.arr[0], n: c.tp * c.arr[0] });
+    attachPrices(over);
+    out.push(finalizeRun({ kind: 'sim', tag: 'overcap', depth: n, trades: over }));
+    return out;
+  }
+
+  // The real order of the user's wins and losses, re-sized by the rail.
+  function buildHistoryRuns() {
+    if (!acctTrades || !acctTrades.length) return [];
+    var c = cfg();
+    if (!c.arr.length || c.sl <= 0) return [];
+    var n = c.arr.length, groups = [], cur = [], step = 0;
+    acctTrades.forEach(function (tr) {
+      var mult = c.arr[step];
+      if (tr.profit > 0) {
+        cur.push({ v: mult, lot: '×' + mult, n: c.tp * mult });
+        groups.push(cur); cur = []; step = 0;
+      } else {
+        cur.push({ v: mult, lot: '×' + mult, n: -c.sl * mult });
+        step++;
+        if (step >= n) step = 0;
+      }
+    });
+    if (cur.length) groups.push(cur);
+    return groups.filter(function (g) { return g.length >= 2; })
+      .map(function (g) { attachPrices(g); return finalizeRun({ kind: 'sim', tag: 'hist', depth: g.length, trades: g }); })
+      .sort(function (a, b) { return b.trades.length - a.trades.length; })
+      .slice(0, 6);
+  }
+
+  function realRuns() {
+    return REAL_RUNS.map(function (r) {
+      return finalizeRun({
+        kind: 'fills', tag: r.id,
+        trades: r.t.map(function (x) {
+          return { v: x.v, lot: x.v.toFixed(2), n: x.n, s: x.s, o: x.o, c: x.c, sl: x.sl, tp: x.tp, k: x.k, e: x.e };
+        })
+      });
+    });
+  }
+
+  function runLabel(r) {
+    var title = r.kind === 'fills'
+      ? t(r.losses === 1 ? 'runLossesOne' : 'runLosses').replace('{n}', r.losses)
+      : ((r.reset || r.tag === 'overcap') ? t('runPastCap')
+        : t('runRecoversAt').replace('{d}', r.depth));
+    // With a Fibonacci-shaped array every recovery nets the same single unit, so the
+    // net alone cannot tell two runs apart — the depth of the hole is what differs.
+    var detail = t('runDeep')
+      .replace('{cum}', sMoney(r.cum))
+      .replace('{net}', sMoney(r.net, true));
+    return '<span class="rn">' + title + '</span><span class="rv">' + detail + '</span>';
+  }
+
+  // Open on the deepest run that still recovers: that is the one that actually
+  // shows a ladder climbing. A two-step run has no ladder to look at.
+  function defaultRunIdx() {
+    var best = -1, deepest = -1;
+    runs.forEach(function (r, i) {
+      if (!r.reset && r.trades.length > deepest) { deepest = r.trades.length; best = i; }
+    });
+    return best >= 0 ? best : runs.length - 1;
+  }
+
+  function refreshRuns(keepIdx) {
+    runs = source === 'settings' ? buildSettingsRuns()
+         : source === 'history' ? buildHistoryRuns()
+         : realRuns();
+    if (!runs.length) { sEl.runRow.innerHTML = ''; curRun = null; return; }
+    if (!keepIdx || runIdx < 0 || runIdx >= runs.length) runIdx = defaultRunIdx();
+    sEl.runRow.innerHTML = '';
+    runs.forEach(function (r, i) {
+      var b = document.createElement('button');
+      b.innerHTML = runLabel(r);
+      b.setAttribute('aria-pressed', i === runIdx ? 'true' : 'false');
+      b.addEventListener('click', function () { runIdx = i; loadRun(runs[i]); sStart(true); });
+      sEl.runRow.appendChild(b);
+    });
+    Array.prototype.forEach.call(sEl.runRow.children, function (b, i) {
+      b.setAttribute('aria-pressed', i === runIdx ? 'true' : 'false');
+    });
+    loadRun(runs[runIdx]);
+  }
+
+  function loadRun(r) {
+    curRun = r;
+    sTotal = S_INTRO + r.trades.length * S_STEP + S_TAIL;
+    sElapsed = 0;
+
+    var hk = r.reset ? 'hlPastCap' : (r.losses === 1 ? 'hlRecoveredOne' : 'hlRecovered');
+    sEl.headline.textContent = t(hk).replace('{n}', r.losses);
+    sEl.sub.textContent = r.kind === 'fills'
+      ? r.trades[0].k + ' → ' + r.trades[r.trades.length - 1].e + ' · XAUUSD · ' +
+        t('fillsUnit').replace('{n}', r.trades.length)
+      : t('simUnit').replace('{n}', r.trades.length);
+    sEl.ladderLabel.textContent = r.kind === 'fills' ? t('ladderLots') : t('ladderMult');
+    byId('sEyebrow').textContent = t(r.kind === 'fills' ? 'stageEyebrowReal' : 'stageEyebrowSim');
+
+    var maxV = Math.max.apply(null, r.trades.map(function (x) { return x.v; }));
+    sEl.steps.innerHTML = '';
+    r.trades.forEach(function (x, i) {
+      var d = document.createElement('div');
+      d.className = 's-step';
+      var isReset = i > 0 && x.v < r.trades[i - 1].v;
+      d.innerHTML = (isReset ? '<span class="s-tag">' + t('resetTag') + '</span>' : '') +
+        '<div class="s-bar-area"><div class="s-fill" style="height:' +
+        (14 + 86 * (x.v / maxV)) + '%"></div></div>' +
+        '<span class="s-lot">' + x.lot + '</span>';
+      sEl.steps.appendChild(d);
+    });
+    sEl.end.classList.remove('show');
+    renderStage(0);
+  }
+
+  function stageCanvas() {
+    var dpr = window.devicePixelRatio || 1;
+    var W = sEl.cv.clientWidth, H = sEl.cv.clientHeight;
+    if (!W || !H) return null;
+    if (sEl.cv.width !== Math.round(W * dpr) || sEl.cv.height !== Math.round(H * dpr)) {
+      sEl.cv.width = Math.round(W * dpr); sEl.cv.height = Math.round(H * dpr);
+    }
+    sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sCtx.clearRect(0, 0, W, H);
+    return { W: W, H: H };
+  }
+
+  function gridAndLabels(g, lo, hi, fmt, padL, padR, padT, plotH, W) {
+    var muted = stageColor('--s-muted'), line = stageColor('--s-line');
+    var fs = Math.max(9, W * 0.030);
+    sCtx.strokeStyle = line; sCtx.lineWidth = 1; sCtx.fillStyle = muted;
+    sCtx.font = '500 ' + fs + 'px "IBM Plex Mono", monospace';
+    sCtx.textAlign = 'left'; sCtx.textBaseline = 'middle';
+    for (var i = 0; i <= 3; i++) {
+      var v = lo + (hi - lo) * (i / 3), y = padT + plotH - ((v - lo) / (hi - lo)) * plotH;
+      sCtx.beginPath(); sCtx.moveTo(padL, y); sCtx.lineTo(W - padR, y); sCtx.stroke();
+      sCtx.fillText(fmt(v), W - padR + fs * 0.5, y);
+    }
+    return fs;
+  }
+
+  function drawFills(g, cur, into) {
+    var r = curRun, W = g.W, H = g.H;
+    var lo = Infinity, hi = -Infinity;
+    r.trades.forEach(function (x) {
+      [x.o, x.c, x.sl, x.tp].forEach(function (v) { if (v > 0) { if (v < lo) lo = v; if (v > hi) hi = v; } });
+    });
+    var pad = (hi - lo) * 0.07 || 1; lo -= pad; hi += pad;
+    var padL = W * 0.055, padR = W * 0.15, padT = H * 0.10, padB = H * 0.10;
+    var plotW = W - padL - padR, plotH = H - padT - padB, N = r.trades.length * 2;
+    function X(k) { return padL + (N === 1 ? plotW / 2 : (k / (N - 1)) * plotW); }
+    function Y(p) { return padT + plotH - ((p - lo) / (hi - lo)) * plotH; }
+    var fs = gridAndLabels(g, lo, hi, function (v) { return v.toFixed(1); }, padL, padR, padT, plotH, W);
+    var cLoss = stageColor('--s-loss'), cWin = stageColor('--s-win');
+    var cMuted = stageColor('--s-muted'), cBrass = stageColor('--s-brass'), cCream = stageColor('--s-cream');
+
+    for (var i = 0; i <= Math.min(cur, r.trades.length - 1); i++) {
+      if (i < 0) break;
+      var tr = r.trades[i];
+      var travelled = (i < cur) ? 1 : sClamp((into - S_ENTRY) / (S_TRAVEL - S_ENTRY), 0, 1);
+      var x0 = X(2 * i), y0 = Y(tr.o), x1 = X(2 * i + 1), y1 = Y(tr.c);
+      var col = tr.n > 0 ? cWin : cLoss;
+
+      if (i === cur && tr.sl > 0 && tr.tp > 0) {
+        var a = sClamp(into / S_ENTRY, 0, 1);
+        sCtx.save(); sCtx.globalAlpha = 0.5 * a;
+        sCtx.setLineDash([W * 0.012, W * 0.012]); sCtx.lineWidth = 1.5;
+        [[tr.sl, cLoss, 'SL'], [tr.tp, cWin, 'TP']].forEach(function (b) {
+          sCtx.strokeStyle = b[1];
+          sCtx.beginPath(); sCtx.moveTo(x0, Y(b[0])); sCtx.lineTo(x1 + plotW * 0.02, Y(b[0])); sCtx.stroke();
+          if (r.trades.length <= 6) {
+            sCtx.setLineDash([]); sCtx.fillStyle = b[1];
+            sCtx.font = '600 ' + (fs * 0.85) + 'px "IBM Plex Mono", monospace';
+            sCtx.fillText(b[2], x1 + plotW * 0.03, Y(b[0]));
+            sCtx.setLineDash([W * 0.012, W * 0.012]);
+          }
+        });
+        sCtx.restore();
+      }
+      if (travelled > 0) {
+        sCtx.save(); sCtx.strokeStyle = col; sCtx.lineWidth = Math.max(2.5, W * 0.008);
+        sCtx.lineCap = 'round';
+        sCtx.beginPath(); sCtx.moveTo(x0, y0);
+        sCtx.lineTo(x0 + (x1 - x0) * travelled, y0 + (y1 - y0) * travelled); sCtx.stroke();
+        sCtx.restore();
+      }
+      if (i < cur && i + 1 < r.trades.length) {
+        sCtx.save(); sCtx.strokeStyle = cMuted; sCtx.globalAlpha = 0.3; sCtx.lineWidth = 1.5;
+        sCtx.setLineDash([W * 0.008, W * 0.014]);
+        sCtx.beginPath(); sCtx.moveTo(x1, y1); sCtx.lineTo(X(2 * i + 2), Y(r.trades[i + 1].o)); sCtx.stroke();
+        sCtx.restore();
+      }
+      var ea = sClamp(into / (S_ENTRY * 0.8), 0, 1);
+      var er = Math.max(3.5, W * 0.014) * (i === cur ? sEase(ea) : 1);
+      sCtx.save(); sCtx.fillStyle = '#17130f'; sCtx.strokeStyle = cBrass;
+      sCtx.lineWidth = Math.max(2, W * 0.006);
+      sCtx.beginPath(); sCtx.arc(x0, y0, er, 0, Math.PI * 2); sCtx.fill(); sCtx.stroke(); sCtx.restore();
+      if (travelled >= 1) {
+        var sq = Math.max(3, W * 0.012);
+        sCtx.fillStyle = col; sCtx.fillRect(x1 - sq, y1 - sq, sq * 2, sq * 2);
+      }
+      if (i === cur && ea > 0.25) {
+        sCtx.save(); sCtx.globalAlpha = sClamp((ea - 0.25) / 0.5, 0, 1);
+        sCtx.fillStyle = cCream;
+        sCtx.font = '700 ' + (fs * 1.1) + 'px "IBM Plex Mono", monospace';
+        sCtx.textAlign = 'center'; sCtx.textBaseline = 'bottom';
+        sCtx.fillText(tr.lot + ' · ' + (tr.s === 'b' ? 'BUY' : 'SELL'), x0, y0 - er - fs * 0.7);
+        sCtx.restore();
+      }
+    }
+  }
+
+  function drawPnl(g, cur, into) {
+    var r = curRun, W = g.W, H = g.H, n = r.trades.length;
+    var cumPts = [0], acc = 0;
+    r.trades.forEach(function (x) { acc += x.n; cumPts.push(acc); });
+
+    // Scale to what has been revealed, not to the whole run. Against a final
+    // -$1,045 the first eight rounds are a flat line pinned to the top edge; this
+    // way each loss is legible as it lands and the axis widens under you, which is
+    // the escalation the ladder is actually doing.
+    var seen = [0];
+    for (var v = 0; v <= Math.min(cur, n - 1); v++) {
+      if (v < cur) seen.push(cumPts[v + 1]);
+      else {
+        var partial = sClamp((into - S_ENTRY) / (S_TRAVEL - S_ENTRY), 0, 1);
+        seen.push(cumPts[v] + (cumPts[v + 1] - cumPts[v]) * partial);
+      }
+    }
+    var lo = Math.min.apply(null, seen), hi = Math.max.apply(null, seen);
+    var span = (hi - lo) || Math.abs(r.trades[0].n) * 3 || 1;
+    lo -= span * 0.18; hi += span * 0.18;
+    var padL = W * 0.055, padR = W * 0.20, padT = H * 0.10, padB = H * 0.10;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    function X(k) { return padL + (n === 0 ? plotW / 2 : (k / n) * plotW); }
+    function Y(v) { return padT + plotH - ((v - lo) / (hi - lo)) * plotH; }
+    gridAndLabels(g, lo, hi, function (v) { return sMoney(v, false); }, padL, padR, padT, plotH, W);
+    var cLoss = stageColor('--s-loss'), cWin = stageColor('--s-win'), cMuted = stageColor('--s-muted');
+
+    sCtx.save(); sCtx.strokeStyle = cMuted; sCtx.globalAlpha = 0.55; sCtx.lineWidth = 2;
+    sCtx.setLineDash([W * 0.014, W * 0.012]);
+    sCtx.beginPath(); sCtx.moveTo(padL, Y(0)); sCtx.lineTo(W - padR, Y(0)); sCtx.stroke(); sCtx.restore();
+
+    for (var i = 0; i <= Math.min(cur, n - 1); i++) {
+      if (i < 0) break;
+      var travelled = (i < cur) ? 1 : sClamp((into - S_ENTRY) / (S_TRAVEL - S_ENTRY), 0, 1);
+      if (travelled <= 0) continue;
+      var col = r.trades[i].n > 0 ? cWin : cLoss;
+      var x0 = X(i), y0 = Y(cumPts[i]), x1 = X(i + 1), y1 = Y(cumPts[i + 1]);
+      sCtx.save(); sCtx.strokeStyle = col; sCtx.lineWidth = Math.max(2.5, W * 0.009);
+      sCtx.lineCap = 'round'; sCtx.lineJoin = 'round';
+      sCtx.beginPath(); sCtx.moveTo(x0, y0);
+      sCtx.lineTo(x0 + (x1 - x0) * travelled, y0 + (y1 - y0) * travelled); sCtx.stroke();
+      sCtx.restore();
+      if (travelled >= 1) {
+        var sq = Math.max(3, W * 0.012);
+        sCtx.fillStyle = col; sCtx.fillRect(x1 - sq, y1 - sq, sq * 2, sq * 2);
+      }
+    }
+    if (cur >= 0 && cur < n) {
+      var fs2 = Math.max(9, W * 0.030);
+      var ea = sClamp(into / (S_ENTRY * 0.8), 0, 1);
+      if (ea > 0.25) {
+        sCtx.save(); sCtx.globalAlpha = sClamp((ea - 0.25) / 0.5, 0, 1);
+        sCtx.fillStyle = stageColor('--s-cream');
+        sCtx.font = '700 ' + (fs2 * 1.1) + 'px "IBM Plex Mono", monospace';
+        sCtx.textAlign = 'center'; sCtx.textBaseline = 'bottom';
+        sCtx.fillText(r.trades[cur].lot, X(cur), Y(cumPts[cur]) - fs2 * 1.1);
+        sCtx.restore();
+      }
+    }
+  }
+
+  function renderStage(tm) {
+    if (!curRun) return;
+    var g = stageCanvas();
+    if (!g) return;
+    var after = tm - S_INTRO;
+    var n = curRun.trades.length;
+    var cur = after < 0 ? -1 : Math.min(n - 1, Math.floor(after / S_STEP));
+    var into = after < 0 ? 0 : after - cur * S_STEP;
+    var done = after < 0 ? 0 : (into >= S_SETTLE ? cur + 1 : cur);
+
+    var hasPrices = curRun.trades[0] && curRun.trades[0].o > 0;
+    if (chartMode === 'price' && hasPrices) drawFills(g, cur, into); else drawPnl(g, cur, into);
+
+    var kids = sEl.steps.children;
+    for (var k = 0; k < kids.length; k++) {
+      var on = k < done;
+      kids[k].classList.toggle('on', on);
+      kids[k].classList.toggle('loss', on && curRun.trades[k].n <= 0);
+      kids[k].classList.toggle('win', on && curRun.trades[k].n > 0);
+    }
+    var pl = 0;
+    for (var q = 0; q < done; q++) pl += curRun.trades[q].n;
+    if (cur >= 0 && cur < n && into > S_TRAVEL && into < S_SETTLE) {
+      pl += curRun.trades[cur].n * sEase((into - S_TRAVEL) / (S_SETTLE - S_TRAVEL));
+    }
+    sEl.pl.textContent = sMoney(pl, true);
+    sEl.pl.classList.toggle('pos', pl >= 0);
+    sEl.count.textContent = Math.max(0, done) + ' / ' + n;
+    if (!sScrubbing && sTotal > 0) sEl.scrub.value = Math.round(1000 * Math.min(tm, sTotal) / sTotal);
+
+    var fa = 0;
+    if (cur >= 0 && cur < n && into >= S_TRAVEL && into < S_TRAVEL + 520) {
+      fa = 0.30 * (1 - (into - S_TRAVEL) / 520);
+      sEl.flash.style.color = curRun.trades[cur].n > 0 ? stageColor('--s-win') : stageColor('--s-loss');
+    }
+    sEl.flash.style.opacity = fa;
+
+    var showEnd = tm >= S_INTRO + n * S_STEP + 150;
+    sEl.end.classList.toggle('show', showEnd);
+    if (showEnd) {
+      sEl.ecEyebrow.textContent = curRun.reset ? t('ecCapCosts') : t('ecResult');
+      sEl.ecVerdict.textContent = curRun.reset ? t('ecVerdictBad') : t('ecVerdictGood');
+      var bigTxt = sMoney(curRun.net, true);
+      sEl.ecBig.textContent = bigTxt;
+      sEl.ecBig.className = 's-big ' + (curRun.net >= 0 ? 'pos' : 'neg') +
+        (bigTxt.length > 11 ? ' xlong' : (bigTxt.length > 7 ? ' long' : ''));
+      // Distance the market travelled against the position between the first entry
+      // and the final round's entry. For a ladder that is losses x stop distance,
+      // which is exactly the spreadsheet's Total Movement row.
+      var first = curRun.trades[0], last = curRun.trades[n - 1];
+      if (first && first.o > 0 && last && last.o > 0) {
+        var adverse = Math.abs(last.o - first.o);
+        sEl.ecMove.textContent = t(curRun.reset ? 'ecMoveBad' : 'ecMoveGood')
+          .replace('{move}', '$' + adverse.toFixed(2));
+        sEl.ecMove.setAttribute('data-levels', first.o.toFixed(2) + ' → ' + last.o.toFixed(2));
+      } else {
+        sEl.ecMove.textContent = '';
+        sEl.ecMove.removeAttribute('data-levels');
+      }
+      var levels = sEl.ecMove.getAttribute('data-levels');
+      var head = curRun.kind === 'fills'
+        ? t('ecFootFills').replace('{n}', n).replace('{peak}', curRun.peak.toFixed(2))
+        : t('ecFootSim').replace('{n}', n).replace('{peak}', '×' + curRun.peak);
+
+      sEl.ecFoot.innerHTML = head + (levels ? '<br>' + levels : '') + '<br>' +
+        t('ecFootLine2').replace('{cum}', sMoney(curRun.cum)).replace('{win}', sMoney(curRun.win, true)) +
+        '<br>' + (curRun.kind === 'fills' ? t('ecFootReal') : t('ecFootSimNote'));
+    }
+  }
+
+  function sFrame(ts) {
+    if (sLast === null) sLast = ts;
+    var dt = Math.min(250, ts - sLast); sLast = ts;
+    sElapsed += dt * sSpeed;
+    if (sElapsed >= sTotal) {
+      if (sLoop) sElapsed = 0;
+      else { sElapsed = sTotal; renderStage(sElapsed); sLast = null; return; }
+    }
+    renderStage(sElapsed);
+    sRaf = requestAnimationFrame(sFrame);
+  }
+  // Reduced motion should stop this playing at someone unprompted — it should not
+  // disable the thing they came here to watch. So: never autoplay under that
+  // setting, but always animate when the play button or a run is actually pressed.
+  function sStart(userAsked) {
+    if (sRaf) cancelAnimationFrame(sRaf);
+    sElapsed = 0; sLast = null;
+    if (!curRun) return;
+    if (sReduced && !userAsked) { renderStage(0); return; }
+    sRaf = requestAnimationFrame(sFrame);
+  }
+  function sStop() { if (sRaf) { cancelAnimationFrame(sRaf); sRaf = null; } sLast = null; }
+
+  function setSource(src) {
+    source = src;
+    Array.prototype.forEach.call(sEl.sourceRow.children, function (b) {
+      b.setAttribute('aria-pressed', b.dataset.src === src ? 'true' : 'false');
+    });
+    runIdx = -1;
+    refreshRuns(false);
+    updateSourceNote();
+    updateReplayInputs();
+    sStart();
+  }
+  // A recorded run carries its own prices, side and lot sizes. Leaving these two
+  // inputs live would let someone change them and see nothing happen.
+  function updateReplayInputs() {
+    var isReal = source === 'fills';
+    byId('startPrice').disabled = isReal;
+    Array.prototype.forEach.call(byId('dirRow').children, function (b) { b.disabled = isReal; });
+    byId('replayInputs').classList.toggle('locked', isReal);
+    byId('inputsNote').textContent = isReal ? t('inputsLocked') : '';
+  }
+
+  function updateSourceNote() {
+    var histBtn = sEl.sourceRow.querySelector('[data-src="history"]');
+    var has = !!(acctTrades && acctTrades.length);
+    histBtn.disabled = !has;
+    sEl.sourceNote.textContent = !has && source === 'history'
+      ? t('srcHistoryEmpty')
+      : t('srcNote' + source.charAt(0).toUpperCase() + source.slice(1));
+    if (!runs.length && source === 'history') sEl.sourceNote.textContent = t('srcHistoryEmpty');
+  }
+
+  Array.prototype.forEach.call(sEl.sourceRow.children, function (b) {
+    b.addEventListener('click', function () { if (!b.disabled) setSource(b.dataset.src); });
+  });
+  sEl.play.addEventListener('click', function () { sStart(true); });
+  sEl.speed.addEventListener('input', function () {
+    sSpeed = parseFloat(sEl.speed.value);
+    sEl.speedVal.textContent = sSpeed.toFixed(1) + '×';
+  });
+  sEl.loop.addEventListener('change', function () { sLoop = sEl.loop.checked; });
+  byId('startPrice').addEventListener('input', function () { refreshRuns(true); renderStage(sElapsed); });
+  Array.prototype.forEach.call(byId('dirRow').children, function (b) {
+    b.addEventListener('click', function () {
+      replayDir = b.dataset.dir;
+      Array.prototype.forEach.call(byId('dirRow').children, function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      refreshRuns(true); sStart(true);
+    });
+  });
+  Array.prototype.forEach.call(byId('chartRow').children, function (b) {
+    b.addEventListener('click', function () {
+      chartMode = b.dataset.chart;
+      Array.prototype.forEach.call(byId('chartRow').children, function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      renderStage(sElapsed);
+    });
+  });
+  sEl.scrub.addEventListener('input', function () {
+    sScrubbing = true;
+    sStop();
+    sElapsed = (parseFloat(sEl.scrub.value) / 1000) * sTotal;
+    renderStage(sElapsed);
+    sScrubbing = false;
+  });
+  sEl.bare.addEventListener('click', function () {
+    var bare = sEl.stage.classList.toggle('bare');
+    sEl.bare.textContent = bare ? t('btnShowFrame') : t('btnHideFrame');
+  });
+
+  function renderReplay() {
+    refreshRuns(true);
+    updateSourceNote();
+    updateReplayInputs();
+    renderStage(sElapsed);
+  }
+
+  function renderActiveMode() {
+    if (currentMode === 'account') renderAccount();
+    else if (currentMode === 'replay') renderReplay();
+    if (currentMode !== 'replay') sStop();
+  }
+  window.__sosRefresh = renderActiveMode;
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderActiveMode, 120);
+  });
+
+  // Charts read their colours from CSS tokens at draw time, so a theme change
+  // after load has to redraw them or they keep the previous theme's palette.
+  function repaintForTheme() { recalc(); }
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', repaintForTheme);
+    else if (mq.addListener) mq.addListener(repaintForTheme);
+  }
+  if (window.MutationObserver) {
+    new MutationObserver(repaintForTheme).observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
+  }
+
+  applyLanguage('fa');
+  applyTier('custom');
+  setMode('ledger');
+})();
+</script>
